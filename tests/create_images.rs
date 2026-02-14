@@ -18,7 +18,10 @@ fn command() {
 #[test]
 fn degradations() {
     let name = "light_and_cracks";
-    let effect = |gmic: Gmic| gmic.add_command("light_patch", &["500", "0.9", "1.7"]).add_command("cracks", &[]);
+    let effect = |gmic: Gmic| {
+        gmic.add_command("light_patch", &["500", "0.9", "1.7"])
+            .add_command("cracks", &[])
+    };
     let result = process_images(name, effect);
     assert!(result.is_ok(), "G'MIC execution failed: {:?}", result.err());
 }
@@ -68,12 +71,12 @@ fn draw() {
     assert!(result.is_ok(), "G'MIC execution failed: {:?}", result.err());
 }
 
+
 fn process_images<F>(output_file: &str, effect: F) -> Result<(), GmicError>
 where
     F: FnOnce(Gmic) -> Gmic,
 {
     let _out = format!("{}/{}.jpg", OUTPUT_FOLDER, output_file);
     let gmic_task = effect(Gmic::new().input(INPUT_IMAGE)).output(_out);
-    let result = gmic_task.execute();
-    result
+    gmic_task.execute()
 }

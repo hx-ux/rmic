@@ -103,22 +103,14 @@ impl Gmic {
 
     /// Select a file
     pub fn input<P: AsRef<Path>>(mut self, path: P) -> Self {
-        if let Some(p) = path.as_ref().to_str() {
-            let fmt = String::from(p);
-            let _file = Gmic::exist_file(&fmt);
-            self.input_file = Some(_file.1);
-        }
+        self.input_file = Some(path.as_ref().to_path_buf());
         self
     }
 
     /// Output the result to a file
     pub fn output<P: AsRef<Path>>(mut self, path: P) -> Self {
-        if let Some(p) = path.as_ref().to_str() {
-            let fmt = String::from(p);
-            let _file = Gmic::exist_file(&fmt);
-            self.output_file = Some(_file.1);
-        }
-        self
+       self.output_file = Some(path.as_ref().to_path_buf());
+       self
     }
 
     // --- Core Logic ---
@@ -151,15 +143,17 @@ impl Gmic {
         (self, ())
     }
 
-    /// raw arguments if you need specific syntax control
+    /// Raw arguments for specific syntax control.
     pub fn add_raw_arg(mut self, arg: &str) -> Self {
-        let parts: Vec<&str> = arg.split(' ').collect();
+        let parts: Vec<&str> = arg.split_whitespace().collect();
+        if !parts.is_empty() {
         self.effect_args
             .push(GmicEffect::new("", &parts, GmicEffectType::Raw));
+        }
         self
     }
 
-    /// Executes the constructed G'MIC command
+    /// Executes the constructed G'MIC command.
     pub fn execute(&self) -> Result<(), GmicError> {
         let mut command = Command::new(&self.binary);
 
@@ -206,46 +200,49 @@ impl Gmic {
         (path.exists(), path.to_path_buf())
     }
 
-    /// Collection of common used params warp into methods for easier use
-    ///
+    /// Collection of common used params wrapped into methods for easier use.
     pub fn to_rgba(self) -> Self {
         self.add_raw_arg("to_rgba")
     }
-    /// Force selected images to be in GRAY mode
+
+    /// Force selected images to be in GRAY mode.
     pub fn to_gray(self) -> Self {
         self.add_raw_arg("to_gray")
     }
-    /// Solarize selected images
+
+    /// Solarize selected images.
     pub fn solarize(self) -> Self {
         self.add_raw_arg("solarize")
     }
-    /// Rotate images by degrees
+
+    /// Rotate images by degrees.
     pub fn rotate(self, degree: u16) -> Self {
         self.add_command("rotate", &[&degree.to_string()])
     }
-    /// Blur selected images
+
+    /// Blur selected images.
     pub fn blur(self, radius: f32) -> Self {
         self.add_command("blur", &[&radius.to_string()])
     }
-    /// Resize selected images
+
+    /// Resize selected images.
     pub fn resize(self, width: u32, height: u32) -> Self {
         self.add_command("resize", &[&width.to_string(), &height.to_string()])
     }
-    /// Adjust brightness
+
+    /// Adjust brightness.
     pub fn brightness(self, value: f32) -> Self {
         self.add_command("brightness", &[&value.to_string()])
     }
-    /// Adjust contrast
+
+    /// Adjust contrast.
     pub fn contrast(self, value: f32) -> Self {
         self.add_command("contrast", &[&value.to_string()])
     }
 
-    /// Adds a gmic watermark with custom text
+    /// Adds a gmic watermark with custom text.
     pub fn watermark(self, text: &str, opacity: f32, size: u32, angle: i16, mode: u8) -> Self {
-        let mut _mode: &str = "0";
-        if mode == 1 {
-            _mode = "1";
-        }
+        let mode_value = if mode == 1 { "1" } else { "0" };
 
         self.add_command(
             "watermark_visible",
@@ -254,8 +251,8 @@ impl Gmic {
                 &opacity.to_string(),
                 &size.to_string(),
                 &angle.to_string(),
-                _mode, // Mode: Add
-                "0",   // Smoothness
+                mode_value, // Mode: Add
+                "0",        // Smoothness
             ],
         )
     }

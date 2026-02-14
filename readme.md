@@ -1,14 +1,13 @@
 # rmic
 
-**rmic** is a safe, ergonomic Rust wrapper for the [G'MIC](https://gmic.eu/) (GREYC's Magic for Image Computing) CLI interface.
+`rmic` is a Rust wrapper for the [G'MIC](https://gmic.eu/) CLI.
 
-## Progress
+## Features
 
-[x] Chainable Worklflow: Use the Builder pattern to construct complex pipelines.
-
-[x] Support for simple effects and raw commands
-
-[] Apply effects to selected images in the stack
+- Chainable builder API for image pipelines.
+- Effect commands (`add_command`) and raw command support (`add_raw_arg`).
+- Stack selection support via `add_command_at`.
+- Convenience helpers like `blur`, `resize`, `rotate`, and `watermark`.
 
 ## Installation
 
@@ -18,56 +17,46 @@ Add this to your `Cargo.toml`:
 [dependencies]
 rmic = "0.1.0"
 ```
+
 ## Quick Start
-See example/simple.rs for a quickstart
-```
+
+```bash
 cargo run --example simple
 ```
 
-## Test
+## Run Tests
 
-Impelented simple test cases
-```
-cargo run --example simple
-```
-
-## 🛠️ System Setup Guide
-
-**rmic** relies on the G'MIC CLI binary (`gmic`) being present on your system. Below are the installation instructions for Windows, macOS, and Linux.
-
-### Linux 
-```
-$ flatpak install flathub org.gimp.GIMP.Plugin.GMic
+```bash
+cargo test
 ```
 
-### MacOS
-The easiest way to install G'MIC on macOS is [via Homebrew](https://formulae.brew.sh/formula/gmic#default)
+## G'MIC Setup
+
+`rmic` requires the `gmic` binary to be available.
+
+### macOS
+
+Install with Homebrew:
+[gmic formula](https://formulae.brew.sh/formula/gmic#default)
+
+### Linux
+
+Install through your package manager (or Flatpak, depending on distro):
+
+```bash
+flatpak install flathub org.gimp.GIMP.Plugin.GMic
+```
 
 ### Windows
 
-Windows does not have a standard package manager that handles the PATH automatically for G'MIC, so a few manual steps are required.
+Download the CLI build:
+[G'MIC CLI for Windows](https://gmic.eu/get_file.php?file=windows/gmic_3.6.4_cli_win64.zip)
 
-**Download:**
+Either add `gmic.exe` to `PATH`, or set the binary path in code:
 
-[use the G'MIC CLI interface](https://gmic.eu/get_file.php?file=windows/gmic_3.6.4_cli_win64.zip)
-
-
-**Add to PATH ():**
-* Add as env called "gmic"
-* Or call the CLI directly using 
+```rust
+let g = rmic::Gmic::with_binary("C:\\path\\to\\gmic.exe");
 ```
-Gmic::with_binary("yout_location")
-```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ## License
 
