@@ -32,14 +32,15 @@ pub struct GmicEffect {
 }
 
 impl GmicEffect {
-    pub(crate) fn new(op: &str, params: &[&str], effect_type: GmicEffectType) -> Self {
+    pub(crate) fn new(command: &str, params: &[&str], effect_type: GmicEffectType) -> Self {
         Self {
-            command: op.to_string(),
+            command: command.to_string(),
             values: params.iter().map(|&s| s.to_string()).collect(),
             effect_type,
             prefix: None,
         }
     }
+    
     // https://gmic.eu/tutorial/selections.html
     pub fn forargs(&self) -> Vec<String> {
         let mut args = Vec::<String>::new();
