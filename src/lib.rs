@@ -40,7 +40,7 @@ impl GmicEffect {
             prefix: None,
         }
     }
-    
+
     // https://gmic.eu/tutorial/selections.html
     pub fn forargs(&self) -> Vec<String> {
         let mut args = Vec::<String>::new();
@@ -91,7 +91,7 @@ impl Gmic {
         }
     }
 
-    /// FALLBACK  
+    /// FALLBACK
     /// Specify a custom path to the gmic binary
     pub fn with_binary(path: &str) -> Self {
         Self {
@@ -110,8 +110,8 @@ impl Gmic {
 
     /// Output the result to a file
     pub fn output<P: AsRef<Path>>(mut self, path: P) -> Self {
-       self.output_file = Some(path.as_ref().to_path_buf());
-       self
+        self.output_file = Some(path.as_ref().to_path_buf());
+        self
     }
 
     // --- Core Logic ---
@@ -148,8 +148,8 @@ impl Gmic {
     pub fn add_raw_arg(mut self, arg: &str) -> Self {
         let parts: Vec<&str> = arg.split_whitespace().collect();
         if !parts.is_empty() {
-        self.effect_args
-            .push(GmicEffect::new("", &parts, GmicEffectType::Raw));
+            self.effect_args
+                .push(GmicEffect::new("", &parts, GmicEffectType::Raw));
         }
         self
     }
@@ -195,11 +195,6 @@ impl Gmic {
     }
 
     // --- UTILS ---
-    /// Generic file checker
-    fn exist_file<P: AsRef<Path>>(path: P) -> (bool, PathBuf) {
-        let path = path.as_ref();
-        (path.exists(), path.to_path_buf())
-    }
 
     /// Collection of common used params wrapped into methods for easier use.
     pub fn to_rgba(self) -> Self {
