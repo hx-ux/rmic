@@ -71,7 +71,6 @@ fn draw() {
     assert!(result.is_ok(), "G'MIC execution failed: {:?}", result.err());
 }
 
-
 fn process_images<F>(output_file: &str, effect: F) -> Result<(), GmicError>
 where
     F: FnOnce(Gmic) -> Gmic,

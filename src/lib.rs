@@ -52,7 +52,7 @@ impl GmicEffect {
             return args;
         }
 
-        let prefix = self.prefix.clone().unwrap_or_else(|| String::new());
+        let prefix = self.prefix.clone().unwrap_or_default();
 
         args.push(format!(
             "{}{}{}",
@@ -119,9 +119,9 @@ impl Gmic {
     /// No Stack position will be set, these command applies to all images in the stack
     /// # Arguments
     /// * `op_name` - The G'MIC command name (e.g., "blur", "resize").
-    ///               (The leading '-' is added automatically).
+    ///   (The leading '-' is added automatically).
     /// * `params` - A slice of parameters/arguments for that command.
-    ///                (Delimiter  ',' is added automatically).
+    ///   (Delimiter  ',' is added automatically).
     ///
     pub fn add_command(self, op_name: &str, params: &[&str]) -> Self {
         self.add_cmd(op_name, params, GmicEffectType::Effect).0
@@ -130,16 +130,16 @@ impl Gmic {
     /// select your stack postion
     /// # Arguments
     /// * `op_name` - The G'MIC command name (e.g., "blur", "resize").
-    ///               (The leading '-' is added automatically).
+    ///   (The leading '-' is added automatically).
     /// * `params` - A slice of parameters/arguments for that command.
-    ///                (Delimiter  ',' is added automatically).
+    ///   (Delimiter  ',' is added automatically).
     ///
-    pub fn add_command_at(self, op_name: &str, params: &[&str], pos: Option<Vec<u16>>) -> Self {
+    pub fn add_command_at(self, op_name: &str, params: &[&str], _pos: Option<Vec<u16>>) -> Self {
         self.add_cmd(op_name, params, GmicEffectType::Effect).0
     }
 
     /// helper to handle the arg pushing logic
-    fn add_cmd<'a>(mut self, op: &str, params: &[&str], e_type: GmicEffectType) -> (Self, ()) {
+    fn add_cmd(mut self, op: &str, params: &[&str], e_type: GmicEffectType) -> (Self, ()) {
         self.effect_args.push(GmicEffect::new(op, params, e_type));
         (self, ())
     }
@@ -158,9 +158,9 @@ impl Gmic {
     pub fn execute(&self) -> Result<(), GmicError> {
         let mut command = Command::new(&self.binary);
 
-        if let Some(i) = &self.input_file {
+        if let Some(input) = &self.input_file {
             command.arg("-input");
-            command.arg(i);
+            command.arg(input);
         }
 
         for effect in &self.effect_args {
@@ -169,12 +169,13 @@ impl Gmic {
             }
         }
 
-        if let Some(i) = &self.output_file {
+        if let Some(output) = &self.output_file {
             command.arg("-output");
-            command.arg(i);
+            command.arg(output);
         }
 
         println!("Executing: {:?} {:?}", self.binary, command.get_args());
+        
         println!(
             "Command: {} {}",
             self.binary,
@@ -187,10 +188,10 @@ impl Gmic {
         let output = command.output()?;
 
         if output.status.success() {
-            return Ok(());
+            Ok(())
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(GmicError::ExecutionFailed(stderr.to_string()));
+            Err(GmicError::ExecutionFailed(stderr.to_string()))
         }
     }
 
@@ -253,3 +254,5 @@ impl Gmic {
         )
     }
 }
+
+
