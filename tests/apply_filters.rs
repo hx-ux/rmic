@@ -1,15 +1,24 @@
+use std::process::Command;
+
 use rmic::{Gmic, GmicError};
 
 const INPUT_IMAGE: &str = "input.jpg";
 const OUTPUT_FOLDER: &str = "tests/out";
 
 #[test]
-fn wildcard() {
-    let name = "wildcard";
-    let effect =
-        |gmic: Gmic| gmic.add_raw_arg("fx_whirling_lines 30,30,0,3,3,6,0,0,0.45,40,60,0,0");
+fn check_dryrun() {
+    let name = "water_params";
+    let effect = |gmic: Gmic| gmic.add_command("water", &["100", "1", "45", "500"]);
     let result = process_images(name, effect);
-    assert!(result.is_ok());
+
+    match result {
+        Ok(c) => {
+            print!("{} -- ", c);
+            // assert!(true);
+            // assert!(c.is_ok());
+        }
+        Err(_) => assert!(false),
+    }
 }
 
 #[test]
@@ -17,7 +26,14 @@ fn command_no_params() {
     let name = "water_default";
     let effect = |gmic: Gmic| gmic.add_command("water", &[]);
     let result = process_images(name, effect);
-    assert!(result.is_ok());
+
+    match result {
+        Ok(c) => {
+            print!("{}", c);
+            assert!(true);
+        }
+        Err(_) => assert!(false),
+    }
 }
 
 #[test]
@@ -64,7 +80,7 @@ fn raw_stacked() {
 
 #[test]
 fn resize() {
-    let name = "50x50";
+    let name = "resized_50x50";
     let effect = |gmic: Gmic| gmic.resize(50, 50).brightness(1.0);
     let result = process_images(name, effect);
     assert!(result.is_ok());
@@ -78,11 +94,14 @@ fn utils_collection() {
     assert!(result.is_ok());
 }
 
-fn process_images<F>(output_file: &str, effect: F) -> Result<(), GmicError>
+fn process_images<F>(output_file: &str, effect: F) -> Result<String, GmicError>
 where
     F: FnOnce(Gmic) -> Gmic,
 {
     let _out = format!("{}/{}.jpg", OUTPUT_FOLDER, output_file);
     let gmic_task = effect(Gmic::new().input(INPUT_IMAGE)).output(_out);
-    gmic_task.execute()
+    let command = gmic_task.dry_run();
+    let result = gmic_task.execute();
+
+    result.map(|_| command)
 }

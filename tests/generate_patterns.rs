@@ -18,6 +18,15 @@ fn maze() {
     assert!(result.is_ok());
 }
 
+#[test]
+fn whirly_lines() {
+    let name = "whirly_lines";
+    let effect =
+        |gmic: Gmic| gmic.add_raw_arg("fx_whirling_lines 30,30,0,3,3,6,0,0,0.45,40,60,0,0");
+    let result = process_images(name, effect);
+    assert!(result.is_ok());
+}
+
 fn process_images<F>(output_file: &str, effect: F) -> Result<(), GmicError>
 where
     F: FnOnce(Gmic) -> Gmic,

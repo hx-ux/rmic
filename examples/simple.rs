@@ -6,7 +6,7 @@ fn main() {
 
     let gmic_task = Gmic::new()
         .input(input_file)
-        .watermark("rmic +  G'MIC", 0.9, 53, 25, 0)
+        .watermark("rmic +  G'MIC", 0.9, 53, 25, 0, 1)
         .output(output_file);
 
     println!("{command}", command = gmic_task.dry_run());
