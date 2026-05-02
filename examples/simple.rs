@@ -6,7 +6,8 @@ fn main() {
 
     let gmic_task = Gmic::new()
         .input(input_file)
-        .watermark("rmic +  G'MIC", 0.9, 53, 25, 0, 1)
+        .watermark("rmic", 0.9, 53, 25, 0, 1)
+        // .add_raw_arg("polaroid 5,30")
         .output(output_file);
 
     println!("{command}", command = gmic_task.dry_run());
