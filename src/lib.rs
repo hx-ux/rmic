@@ -156,11 +156,16 @@ impl Gmic {
 
     /// Executes the constructed G'MIC command.
     pub fn execute(&self) -> Result<(), GmicError> {
+        if let Some(ref input) = self.input_file {
+            if !input.exists() {
+                return Err(GmicError::InputNotFound);
+            }
+        }
+
         let mut command = Command::new(&self.binary);
 
         if let Some(input) = &self.input_file {
-            command.arg("-input");
-            command.arg(input);
+            command.arg("-input").arg(input);
         }
 
         for effect in &self.effect_args {
@@ -170,12 +175,9 @@ impl Gmic {
         }
 
         if let Some(output) = &self.output_file {
-            command.arg("-output");
-            command.arg(output);
+            command.arg("-output").arg(output);
         }
 
-        println!("Executing: {:?} {:?}", self.binary, command.get_args());
-        
         println!(
             "Command: {} {}",
             self.binary,
@@ -193,6 +195,26 @@ impl Gmic {
             let stderr = String::from_utf8_lossy(&output.stderr);
             Err(GmicError::ExecutionFailed(stderr.to_string()))
         }
+    }
+
+    pub fn dry_run(&self) -> String {
+        let mut parts = vec![self.binary.clone()];
+
+        if let Some(ref input) = self.input_file {
+            parts.push("-input".to_string());
+            parts.push(input.to_string_lossy().to_string());
+        }
+
+        for effect in &self.effect_args {
+            parts.extend(effect.forargs());
+        }
+
+        if let Some(ref output) = self.output_file {
+            parts.push("-output".to_string());
+            parts.push(output.to_string_lossy().to_string());
+        }
+
+        parts.join(" ")
     }
 
     // --- UTILS ---
@@ -254,5 +276,3 @@ impl Gmic {
         )
     }
 }
-
-
