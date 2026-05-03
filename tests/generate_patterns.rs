@@ -13,7 +13,7 @@ fn trippy_pattern() {
 #[test]
 fn maze() {
     let name = "maze";
-    let effect = |gmic: Gmic| gmic.add_raw_arg("fx_maze 24,8,0,1,0");
+    let effect = |gmic: Gmic| gmic.add_raw_arg("fx_maze 24,8,0,1,0").resize(500, 500);
     let result = process_images(name, effect);
     assert!(result.is_ok());
 }

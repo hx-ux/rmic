@@ -100,26 +100,14 @@ impl GmicEffect {
         self.parameters.iter().collect()
     }
 
-    pub fn to_stri(&self) -> String {
-        if self.raw {
-            return self.command.clone();
-        }
-
-        let params: String = self
-            .get_parameters()
-            .iter()
-            .map(|p| p.default.clone())
-            .collect::<Vec<_>>()
-            .join(",");
-
-        // params
-        format!("{} {}", self.command.clone(), params)
-    }
-
     /// Returns ["command", "value1,value2,..."] or the raw string
     pub fn forargs(&self) -> Vec<String> {
         if self.raw {
-            return vec![self.command.clone()];
+            return self
+                .command
+                .split_whitespace()
+                .map(|s| s.to_string())
+                .collect();
         }
 
         let params: String = self
@@ -266,6 +254,41 @@ pub fn load_effects_from_json<P: AsRef<Path>>(
     let data = fs::read_to_string(path)?;
     let effects: Vec<GmicEffect> = serde_json::from_str(&data)?;
     Ok(effects)
+}
+
+/// Parses a single G'MIC effect from a JSON string.
+///
+/// The JSON should be an object with name, command, and parameters.
+pub fn parse_effect_from_json(json_str: &str) -> Result<GmicEffect, Box<dyn std::error::Error>> {
+    let effect_json: serde_json::Value = serde_json::from_str(json_str)?;
+    let name = effect_json["name"].as_str().unwrap_or("").to_string();
+    let command = effect_json["command"].as_str().unwrap_or("").to_string();
+    let mut parameters = vec![];
+    if let Some(params) = effect_json["parameters"].as_array() {
+        for param in params {
+            let param_type = param["type"].as_str().unwrap_or("");
+            if param_type == "note" || param_type == "separator" {
+                continue;
+            }
+            let default = param["default"].as_str().unwrap_or("").to_string();
+            let pos_str = param["pos"].as_str().unwrap_or("0");
+            let pos = pos_str.parse::<usize>().unwrap_or(0);
+            parameters.push(Parameter {
+                name: param["name"].as_str().map(|s| s.to_string()),
+                default,
+                min: param["min"].as_str().map(|s| s.to_string()),
+                max: param["max"].as_str().map(|s| s.to_string()),
+                position: pos,
+            });
+        }
+    }
+    parameters.sort_by_key(|p| p.position);
+    Ok(GmicEffect {
+        name: Some(name),
+        command,
+        parameters,
+        raw: false,
+    })
 }
 
 // Utility methods remain similar, but updated to use add_command

@@ -4,6 +4,22 @@ const INPUT_IMAGE: &str = "input.jpg";
 const OUTPUT_FOLDER: &str = "tests/out";
 
 #[test]
+fn from_json_String() {
+    // let name = "water_params";
+    // // let effect = |gmic: Gmic| gmic.parse_effect_from_json()
+    // let result = process_images(name, effect);
+
+    // match result {
+    //     Ok(c) => {
+    //         print!("{} -- ", c);
+    //         // assert!(true);
+    //         // assert!(c.is_ok());
+    //     }
+    //     Err(_) => assert!(false),
+    // }
+}
+
+#[test]
 fn check_dryrun() {
     let name = "water_params";
     let effect = |gmic: Gmic| gmic.add_raw_arg("polaroid 5,30");
@@ -29,11 +45,11 @@ fn command_params() {
 
 #[test]
 fn commands_stacked() {
-    let name = "light_and_water_polaroid";
+    let name = "card";
     let effect = |gmic: Gmic| {
         gmic.add_effect("light_patch", &["500", "0.9", "1.7"])
-            .add_effect("water", &["100", "1", "45", "1"])
-            .add_effect("polaroid", &["5,30"])
+            .add_effect("glow", &["10%"])
+            .add_raw_arg("polaroid 5,30")
     };
     let result = process_images(name, effect);
     assert!(result.is_ok());
