@@ -1,13 +1,29 @@
+//! # RMIC: Rust G'MIC Interface
+//!
+//! This library provides a builder pattern for constructing and executing G'MIC commands.
+//! It allows chaining image processing effects, setting input/output files, and executing via the CLI.
+
+mod effect;
+mod parameter;
+
 use std::{
     io,
     path::{Path, PathBuf},
     process::Command,
 };
+
+use crate::{effect::Effect, parameter::Parameter};
+
+/// Errors that can occur during G'MIC operations.
 #[derive(Debug)]
 pub enum GmicError {
+    /// I/O error (e.g., file access).
     Io(io::Error),
+    /// Command execution failed, with stderr output.
     ExecutionFailed(String),
+    /// Input file not found.
     InputNotFound,
+    /// G'MIC binary not found.
     BinNotFound,
 }
 
@@ -17,144 +33,88 @@ impl From<io::Error> for GmicError {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-enum GmicEffectType {
-    Raw,
-    Effect,
-}
-
-#[derive(Debug, Clone)]
-pub struct GmicEffect {
-    command: String,
-    values: Vec<String>,
-    prefix: Option<String>,
-    effect_type: GmicEffectType,
-}
-
-impl GmicEffect {
-    pub(crate) fn new(command: &str, params: &[&str], effect_type: GmicEffectType) -> Self {
-        Self {
-            command: command.to_string(),
-            values: params.iter().map(|&s| s.to_string()).collect(),
-            effect_type,
-            prefix: None,
-        }
-    }
-
-    // https://gmic.eu/tutorial/selections.html
-    pub fn forargs(&self) -> Vec<String> {
-        let mut args = Vec::<String>::new();
-
-        if self.effect_type == GmicEffectType::Raw {
-            for gg in &self.values {
-                args.push(gg.clone());
-            }
-            return args;
-        }
-
-        let prefix = self.prefix.clone().unwrap_or_default();
-
-        args.push(format!(
-            "{}{}{}",
-            prefix,
-            self.command.clone(),
-            String::new()
-        ));
-
-        //Multiple parameters must be provided as a single comma-separated string
-        if !self.values.is_empty() {
-            args.push(self.values.join(","));
-        } else {
-            // G'MIC expects a parameter even if empty; a single comma acts as a placeholder for default values.
-            args.push(",".to_string());
-        }
-        args
-    }
-}
-
-/// builder struct for G'MIC commands
 pub struct Gmic {
     binary: String,
-    effect_args: Vec<GmicEffect>,
+    effects: Vec<Effect>,
     input_file: Option<PathBuf>,
     output_file: Option<PathBuf>,
 }
 
-impl Gmic {
-    /// Assumes 'gmic' is in the system PATH.
-    pub fn new() -> Self {
+impl Default for Gmic {
+    fn default() -> Self {
         Self {
             binary: "gmic".to_string(),
-            effect_args: Vec::new(),
+            effects: Vec::new(),
             input_file: None,
             output_file: None,
         }
     }
+}
 
-    /// FALLBACK
-    /// Specify a custom path to the gmic binary
+impl Gmic {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Creates a new G'MIC builder with a custom binary path.
     pub fn with_binary(path: &str) -> Self {
         Self {
             binary: path.to_string(),
-            effect_args: Vec::new(),
-            input_file: None,
-            output_file: None,
+            ..Self::default()
         }
     }
 
-    /// Select a file
+    /// Sets the input file.
     pub fn input<P: AsRef<Path>>(mut self, path: P) -> Self {
         self.input_file = Some(path.as_ref().to_path_buf());
         self
     }
 
-    /// Output the result to a file
+    /// Sets the output file.
     pub fn output<P: AsRef<Path>>(mut self, path: P) -> Self {
         self.output_file = Some(path.as_ref().to_path_buf());
         self
     }
 
-    // --- Core Logic ---
+    /// Adds a effect with params
+    pub fn add_effect(mut self, command: &str, params: &[&str]) -> Self {
+        let parameters: Vec<Parameter> = params
+            .iter()
+            .enumerate()
+            .map(|(idx, value)| Parameter::const_value(value.to_string(), idx))
+            .collect();
 
-    /// No Stack position will be set, these command applies to all images in the stack
-    /// # Arguments
-    /// * `op_name` - The G'MIC command name (e.g., "blur", "resize").
-    ///   (The leading '-' is added automatically).
-    /// * `params` - A slice of parameters/arguments for that command.
-    ///   (Delimiter  ',' is added automatically).
-    ///
-    pub fn add_command(self, op_name: &str, params: &[&str]) -> Self {
-        self.add_cmd(op_name, params, GmicEffectType::Effect).0
+        self.effects
+            .push(Effect::new(command.to_string(), parameters));
+        self
     }
 
-    /// select your stack postion
-    /// # Arguments
-    /// * `op_name` - The G'MIC command name (e.g., "blur", "resize").
-    ///   (The leading '-' is added automatically).
-    /// * `params` - A slice of parameters/arguments for that command.
-    ///   (Delimiter  ',' is added automatically).
-    ///
-    pub fn add_command_at(self, op_name: &str, params: &[&str], _pos: Option<Vec<u16>>) -> Self {
-        self.add_cmd(op_name, params, GmicEffectType::Effect).0
-    }
-
-    /// helper to handle the arg pushing logic
-    fn add_cmd(mut self, op: &str, params: &[&str], e_type: GmicEffectType) -> (Self, ()) {
-        self.effect_args.push(GmicEffect::new(op, params, e_type));
-        (self, ())
-    }
-
-    /// Raw arguments for specific syntax control.
+    /// Adds raw arguments.
     pub fn add_raw_arg(mut self, arg: &str) -> Self {
-        let parts: Vec<&str> = arg.split_whitespace().collect();
-        if !parts.is_empty() {
-            self.effect_args
-                .push(GmicEffect::new("", &parts, GmicEffectType::Raw));
+        if !arg.is_empty() {
+            self.effects.push(Effect::new_raw(arg.to_string()));
         }
         self
     }
 
-    /// Executes the constructed G'MIC command.
+    fn generate_command(&self) -> Command {
+        let mut command = Command::new(&self.binary);
+
+        if let Some(ref input) = self.input_file {
+            command.arg("-input").arg(input);
+        }
+
+        for effect in &self.effects {
+            command.args(effect.forargs());
+        }
+
+        if let Some(ref output) = self.output_file {
+            command.arg("-output").arg(output);
+        }
+
+        command
+    }
+    /// Executes the built command.
     pub fn execute(&self) -> Result<(), GmicError> {
         if let Some(ref input) = self.input_file {
             if !input.exists() {
@@ -162,32 +122,7 @@ impl Gmic {
             }
         }
 
-        let mut command = Command::new(&self.binary);
-
-        if let Some(input) = &self.input_file {
-            command.arg("-input").arg(input);
-        }
-
-        for effect in &self.effect_args {
-            for arg in effect.forargs() {
-                command.arg(arg);
-            }
-        }
-
-        if let Some(output) = &self.output_file {
-            command.arg("-output").arg(output);
-        }
-
-        println!(
-            "Command: {} {}",
-            self.binary,
-            command
-                .get_args()
-                .map(|arg| arg.to_string_lossy())
-                .collect::<Vec<_>>()
-                .join(" ")
-        );
-        let output = command.output()?;
+        let output = self.generate_command().output()?;
 
         if output.status.success() {
             Ok(())
@@ -197,81 +132,69 @@ impl Gmic {
         }
     }
 
+    /// Previews the command.
     pub fn dry_run(&self) -> String {
-        let mut parts = vec![self.binary.clone()];
-
-        if let Some(ref input) = self.input_file {
-            parts.push("-input".to_string());
-            parts.push(input.to_string_lossy().to_string());
-        }
-
-        for effect in &self.effect_args {
-            parts.extend(effect.forargs());
-        }
-
-        if let Some(ref output) = self.output_file {
-            parts.push("-output".to_string());
-            parts.push(output.to_string_lossy().to_string());
-        }
-
-        parts.join(" ")
+        self.generate_command()
+            .get_args()
+            .map(|arg| arg.to_string_lossy())
+            .collect::<Vec<_>>()
+            .join(" ")
     }
+}
 
-    // --- UTILS ---
-
-    /// Collection of common used params wrapped into methods for easier use.
+// Utility methods remain similar, but updated to use add_command
+impl Gmic {
     pub fn to_rgba(self) -> Self {
         self.add_raw_arg("to_rgba")
     }
 
-    /// Force selected images to be in GRAY mode.
     pub fn to_gray(self) -> Self {
         self.add_raw_arg("to_gray")
     }
 
-    /// Solarize selected images.
     pub fn solarize(self) -> Self {
         self.add_raw_arg("solarize")
     }
 
-    /// Rotate images by degrees.
     pub fn rotate(self, degree: u16) -> Self {
-        self.add_command("rotate", &[&degree.to_string()])
+        self.add_effect("rotate", &[&degree.to_string()])
     }
 
-    /// Blur selected images.
     pub fn blur(self, radius: f32) -> Self {
-        self.add_command("blur", &[&radius.to_string()])
+        self.add_effect("blur", &[&radius.to_string()])
     }
 
-    /// Resize selected images.
     pub fn resize(self, width: u32, height: u32) -> Self {
-        self.add_command("resize", &[&width.to_string(), &height.to_string()])
+        self.add_effect("resize", &[&width.to_string(), &height.to_string()])
     }
 
-    /// Adjust brightness.
     pub fn brightness(self, value: f32) -> Self {
-        self.add_command("brightness", &[&value.to_string()])
+        self.add_effect("brightness", &[&value.to_string()])
     }
 
-    /// Adjust contrast.
     pub fn contrast(self, value: f32) -> Self {
-        self.add_command("contrast", &[&value.to_string()])
+        self.add_effect("contrast", &[&value.to_string()])
     }
 
-    /// Adds a gmic watermark with custom text.
-    pub fn watermark(self, text: &str, opacity: f32, size: u32, angle: i16, mode: u8) -> Self {
-        let mode_value = if mode == 1 { "1" } else { "0" };
-
-        self.add_command(
+    pub fn watermark(
+        self,
+        text: &str,
+        opacity: f32,
+        size: u32,
+        angle: i16,
+        mode: u8,
+        smoothness: u8,
+    ) -> Self {
+        let mode_str = if mode == 1 { "1" } else { "0" };
+        self.add_effect(
             "watermark_visible",
             &[
                 text,
                 &opacity.to_string(),
                 &size.to_string(),
                 &angle.to_string(),
-                mode_value, // Mode: Add
-                "0",        // Smoothness
+                mode_str,
+                &smoothness.to_string(),
             ],
         )
     }
