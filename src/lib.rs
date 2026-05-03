@@ -59,6 +59,13 @@ impl Parameter {
             position,
         }
     }
+
+    // if possible, randomize
+    pub fn randomize(self) {
+        if let m = Some(self.min) {
+            if let max = Some(self.max) {}
+        }
+    }
 }
 
 /// Represents a G'MIC effect with metadata.
