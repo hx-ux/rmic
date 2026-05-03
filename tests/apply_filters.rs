@@ -1,7 +1,6 @@
+use crate::utils::process_images;
 use rmic::{Gmic, GmicError};
-
-const INPUT_IMAGE: &str = "input.jpg";
-const OUTPUT_FOLDER: &str = "tests/out";
+mod utils;
 
 #[test]
 fn from_json_String() {
@@ -91,16 +90,4 @@ fn utils_collection() {
     let effect_chain = |g: Gmic| g.blur(5.0).rotate(90).solarize();
     let result = process_images(name, effect_chain);
     assert!(result.is_ok());
-}
-
-fn process_images<F>(output_file: &str, effect: F) -> Result<String, GmicError>
-where
-    F: FnOnce(Gmic) -> Gmic,
-{
-    let _out = format!("{}/{}.jpg", OUTPUT_FOLDER, output_file);
-    let gmic_task = effect(Gmic::new().input(INPUT_IMAGE)).output(_out);
-    let command = gmic_task.dry_run();
-    let result = gmic_task.execute();
-
-    result.map(|_| command)
 }

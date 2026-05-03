@@ -1,6 +1,7 @@
 use rmic::{Gmic, GmicError};
-const INPUT_IMAGE: &str = "input.jpg";
-const OUTPUT_FOLDER: &str = "tests/out";
+
+use crate::utils::process_images;
+mod utils;
 
 #[test]
 fn trippy_pattern() {
@@ -75,13 +76,4 @@ fn big_chaos() {
     };
     let result = process_images(name, effect);
     assert!(result.is_ok());
-}
-
-fn process_images<F>(output_file: &str, effect: F) -> Result<(), GmicError>
-where
-    F: FnOnce(Gmic) -> Gmic,
-{
-    let _out = format!("{}/{}.jpg", OUTPUT_FOLDER, output_file);
-    let gmic_task = effect(Gmic::new().input(INPUT_IMAGE)).output(_out);
-    gmic_task.execute()
 }

@@ -3,13 +3,16 @@
 //! This library provides a builder pattern for constructing and executing G'MIC commands.
 //! It allows chaining image processing effects, setting input/output files, and executing via the CLI.
 
+mod effect;
+mod parameter;
+
 use std::{
-    fs, io,
+    io,
     path::{Path, PathBuf},
     process::Command,
 };
 
-use serde::{Deserialize, Serialize};
+use crate::{effect::Effect, parameter::Parameter};
 
 /// Errors that can occur during G'MIC operations.
 #[derive(Debug)]
@@ -30,108 +33,9 @@ impl From<io::Error> for GmicError {
     }
 }
 
-/// A parameter for a G'MIC effect.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct Parameter {
-    /// Data type (e.g., "float", "int", "bool", "color").
-    // #[serde(rename = "type")]
-    // pub param_type: String,
-    /// Descriptive name (optional).
-    pub name: Option<String>,
-    // pub command: String,
-    /// Default value.
-    pub default: String,
-    /// Minimum value (optional).
-    pub min: Option<String>,
-    /// Maximum value (optional).
-    pub max: Option<String>,
-    /// Position in the parameter list.
-    pub position: usize,
-}
-
-impl Parameter {
-    pub fn const_value(value: String, position: usize) -> Self {
-        Self {
-            name: None,
-            default: value,
-            min: None,
-            max: None,
-            position,
-        }
-    }
-
-    // if possible, randomize
-    pub fn randomize(self) {
-        if let m = Some(self.min) {
-            if let max = Some(self.max) {}
-        }
-    }
-}
-
-/// Represents a G'MIC effect with metadata.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct GmicEffect {
-    /// Short name of the effect (optional).
-    pub name: Option<String>,
-    /// The G'MIC command name.
-    pub command: String,
-    /// The preview command.
-    // pub command_preview: String,
-    /// List of parameters and other elements.
-    pub parameters: Vec<Parameter>,
-    /// a raw string with all the commands in it
-    raw: bool,
-}
-
-impl GmicEffect {
-    pub fn new(command: String, params: Vec<Parameter>) -> Self {
-        Self {
-            name: None,
-            command: command.clone(),
-            parameters: params,
-            raw: false,
-        }
-    }
-
-    pub fn new_raw(command: String) -> Self {
-        Self {
-            name: None,
-            command,
-            parameters: vec![],
-            raw: true,
-        }
-    }
-
-    /// Gets the of the effect parameters
-    pub fn get_parameters(&self) -> Vec<&Parameter> {
-        self.parameters.iter().collect()
-    }
-
-    /// Returns ["command", "value1,value2,..."] or the raw string
-    pub fn forargs(&self) -> Vec<String> {
-        if self.raw {
-            return self
-                .command
-                .split_whitespace()
-                .map(|s| s.to_string())
-                .collect();
-        }
-
-        let params: String = self
-            .get_parameters()
-            .iter()
-            .map(|p| p.default.clone())
-            .collect::<Vec<_>>()
-            .join(",");
-
-        vec![self.command.clone(), params]
-    }
-}
-
-/// Builder for G'MIC commands.
 pub struct Gmic {
     binary: String,
-    effects: Vec<GmicEffect>,
+    effects: Vec<Effect>,
     input_file: Option<PathBuf>,
     output_file: Option<PathBuf>,
 }
@@ -180,29 +84,15 @@ impl Gmic {
             .map(|(idx, value)| Parameter::const_value(value.to_string(), idx))
             .collect();
 
-        let effect = GmicEffect::new(command.to_string(), parameters);
-        self.effects.push(effect);
-        self
-    }
-
-    /// Adds a parsed effect with custom values.
-    ///
-    /// Values should be in the order of the effect's parameters.
-    pub fn add_parsed_effect(mut self, effect: &GmicEffect, values: &[&str]) -> Self {
-        // let values = values.iter().map(|s| s.to_string()).collect();
-        // self.effect_args.push(EffectInstance {
-        //     effect: effect.clone(),
-        //     values,
-        // });
+        self.effects
+            .push(Effect::new(command.to_string(), parameters));
         self
     }
 
     /// Adds raw arguments.
     pub fn add_raw_arg(mut self, arg: &str) -> Self {
         if !arg.is_empty() {
-            let effect = GmicEffect::new_raw(arg.to_string());
-
-            self.effects.push(effect);
+            self.effects.push(Effect::new_raw(arg.to_string()));
         }
         self
     }
@@ -252,54 +142,7 @@ impl Gmic {
     }
 }
 
-/// Loads G'MIC effects from a JSON file.
-///
-/// The JSON should be an array of effect objects.
-pub fn load_effects_from_json<P: AsRef<Path>>(
-    path: P,
-) -> Result<Vec<GmicEffect>, Box<dyn std::error::Error>> {
-    let data = fs::read_to_string(path)?;
-    let effects: Vec<GmicEffect> = serde_json::from_str(&data)?;
-    Ok(effects)
-}
-
-/// Parses a single G'MIC effect from a JSON string.
-///
-/// The JSON should be an object with name, command, and parameters.
-pub fn parse_effect_from_json(json_str: &str) -> Result<GmicEffect, Box<dyn std::error::Error>> {
-    let effect_json: serde_json::Value = serde_json::from_str(json_str)?;
-    let name = effect_json["name"].as_str().unwrap_or("").to_string();
-    let command = effect_json["command"].as_str().unwrap_or("").to_string();
-    let mut parameters = vec![];
-    if let Some(params) = effect_json["parameters"].as_array() {
-        for param in params {
-            let param_type = param["type"].as_str().unwrap_or("");
-            if param_type == "note" || param_type == "separator" {
-                continue;
-            }
-            let default = param["default"].as_str().unwrap_or("").to_string();
-            let pos_str = param["pos"].as_str().unwrap_or("0");
-            let pos = pos_str.parse::<usize>().unwrap_or(0);
-            parameters.push(Parameter {
-                name: param["name"].as_str().map(|s| s.to_string()),
-                default,
-                min: param["min"].as_str().map(|s| s.to_string()),
-                max: param["max"].as_str().map(|s| s.to_string()),
-                position: pos,
-            });
-        }
-    }
-    parameters.sort_by_key(|p| p.position);
-    Ok(GmicEffect {
-        name: Some(name),
-        command,
-        parameters,
-        raw: false,
-    })
-}
-
 // Utility methods remain similar, but updated to use add_command
-
 impl Gmic {
     pub fn to_rgba(self) -> Self {
         self.add_raw_arg("to_rgba")
