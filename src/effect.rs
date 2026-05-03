@@ -1,22 +1,22 @@
-use crate::parameter::Parameter;
+use crate::parameter::{Parameter, ParameterType};
+use serde::{Deserialize, Deserializer};
 
 /// Represents a G'MIC effect
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Effect {
-    /// Short name of the effect (optional).
-    pub name: Option<String>,
     /// The G'MIC command name.
     pub command: String,
     /// List of parameters and other elements.
+    #[serde(deserialize_with = "deserialize_parameters")]
     pub parameters: Vec<Parameter>,
     /// a raw string with all the commands in it
+    #[serde(default)]
     raw: bool,
 }
 
 impl Effect {
     pub fn new(command: String, params: Vec<Parameter>) -> Self {
         Self {
-            name: None,
             command: command.clone(),
             parameters: params,
             raw: false,
@@ -25,14 +25,13 @@ impl Effect {
 
     pub fn new_raw(command: String) -> Self {
         Self {
-            name: None,
             command,
             parameters: vec![],
             raw: true,
         }
     }
 
-    pub fn get_parameters(&self) -> Vec<&Parameter> {
+    fn filter_parameters(&self) -> Vec<&Parameter> {
         self.parameters.iter().collect()
     }
 
@@ -47,7 +46,7 @@ impl Effect {
         }
 
         let params: String = self
-            .get_parameters()
+            .filter_parameters()
             .iter()
             .map(|p| p.default.clone())
             .collect::<Vec<_>>()
@@ -55,4 +54,50 @@ impl Effect {
 
         vec![self.command.clone(), params]
     }
+
+    pub fn from_json(json_str: &str) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(json_str)
+    }
+}
+
+fn deserialize_parameters<'de, D>(deserializer: D) -> Result<Vec<Parameter>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    struct ParamHelper {
+        #[serde(rename = "type")]
+        param_type: ParameterType,
+        default: Option<String>,
+        min: Option<String>,
+        max: Option<String>,
+        pos: Option<String>,
+    }
+
+    let helpers: Vec<ParamHelper> = Vec::deserialize(deserializer)?;
+    let mut parameters = Vec::new();
+    for helper in helpers {
+        match helper.param_type {
+            ParameterType::Int
+            | ParameterType::Float
+            | ParameterType::Bool
+            | ParameterType::Choice => {
+                let position = helper
+                    .pos
+                    .as_ref()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(0);
+
+                parameters.push(Parameter {
+                    param_type: helper.param_type,
+                    default: helper.default.unwrap_or_default(),
+                    min: helper.min,
+                    max: helper.max,
+                    position,
+                });
+            }
+            _ => {} 
+        }
+    }
+    Ok(parameters)
 }
