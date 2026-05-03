@@ -32,7 +32,7 @@ pub struct Parameter {
     /// Data type (e.g., "float", "int", "bool", "color").
     pub param_type: ParameterType,
     /// Descriptive name (optional).
-    pub name: Option<String>,
+    // pub command: String,
     /// Default value.
     pub default: String,
     /// Minimum value (optional).
@@ -48,7 +48,6 @@ impl Parameter {
         Self {
             param_type: Self::infer_param_type(value.clone()),
             default: value,
-            name: None,
             min: None,
             max: None,
             position,
@@ -58,7 +57,6 @@ impl Parameter {
     pub fn new(
         param_type: ParameterType,
         default: impl Into<String>,
-        name: Option<String>,
         min: Option<String>,
         max: Option<String>,
         position: usize,
@@ -66,7 +64,6 @@ impl Parameter {
         Self {
             param_type,
             default: default.into(),
-            name,
             min,
             max,
             position,
