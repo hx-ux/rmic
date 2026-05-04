@@ -1,16 +1,17 @@
-use crate::parameter::{Parameter, ParameterType};
+use crate::parameter::{self, Parameter, ParameterType};
 use serde::{Deserialize, Deserializer};
-
 /// Represents a G'MIC effect
 #[derive(Debug, Clone, Deserialize)]
 pub struct Effect {
     /// The G'MIC command name.
     pub command: String,
+
     /// List of parameters and other elements.
     #[serde(deserialize_with = "deserialize_parameters")]
     pub parameters: Vec<Parameter>,
+
     /// a raw string with all the commands in it
-    #[serde(default)]
+    #[serde(skip, default)]
     raw: bool,
 }
 
@@ -31,10 +32,6 @@ impl Effect {
         }
     }
 
-    fn filter_parameters(&self) -> Vec<&Parameter> {
-        self.parameters.iter().collect()
-    }
-
     /// Returns ["command", "value1,value2,..."] or the raw string
     pub fn forargs(&self) -> Vec<String> {
         if self.raw {
@@ -45,8 +42,8 @@ impl Effect {
                 .collect();
         }
 
-        let params: String = self
-            .filter_parameters()
+        let params = self
+            .parameters
             .iter()
             .map(|p| p.default.clone())
             .collect::<Vec<_>>()
@@ -57,6 +54,11 @@ impl Effect {
 
     pub fn from_json(json_str: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(json_str)
+    }
+    pub fn randomize(&mut self) {
+        for p in self.parameters.iter_mut() {
+            p.randomize();
+        }
     }
 }
 
@@ -96,7 +98,7 @@ where
                     position,
                 });
             }
-            _ => {} 
+            _ => {}
         }
     }
     Ok(parameters)

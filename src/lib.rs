@@ -104,6 +104,18 @@ impl Gmic {
         self
     }
 
+    pub fn add_build_effect(mut self, effect: Effect) -> Self {
+        self.effects.push(effect);
+        self
+    }
+
+    pub fn randomize(mut self) -> Self {
+        for eff in self.effects.iter_mut() {
+            eff.randomize();
+        }
+        self
+    }
+
     fn generate_command(&self) -> Command {
         let mut command = Command::new(&self.binary);
 

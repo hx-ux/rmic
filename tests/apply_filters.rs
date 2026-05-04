@@ -16,7 +16,7 @@ fn from_json_string() {
          { "type": "note", "text": "update 2013-Mar-31 author @jayprich" }
          ]
        }"#)
-        .resize(1024, 1024)
+       .resize(1024, 1024).randomize()
     };
 
     let result = process_images(name, effect);
@@ -24,8 +24,6 @@ fn from_json_string() {
     match result {
         Ok(c) => {
             print!("{} -- ", c);
-            // assert!(true);
-            // assert!(c.is_ok());
         }
         Err(_) => assert!(false),
     }
@@ -37,14 +35,14 @@ fn check_dryrun() {
     let effect = |gmic: Gmic| gmic.add_raw_effect("polaroid 5,30");
     let result = process_images(name, effect);
 
-    match result {
-        Ok(c) => {
-            print!("{} -- ", c);
-            // assert!(true);
-            // assert!(c.is_ok());
-        }
-        Err(_) => assert!(false),
+    let mut command = "".to_string();
+    if let Ok(c) = result {
+        command = c.to_string();
     }
+    assert_eq!(
+        "-input input.jpg polaroid 5,30 -output tests/out/water_params.jpg".to_string(),
+        command
+    );
 }
 
 #[test]

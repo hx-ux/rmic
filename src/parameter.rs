@@ -1,6 +1,10 @@
+use std::default;
+
+use rand::prelude::*;
+use rand::rng;
 use serde::Deserialize;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum ParameterType {
     Int,
@@ -10,7 +14,14 @@ pub enum ParameterType {
     Separator,
     Link,
     Note,
+    #[default]
     Unknown,
+}
+
+impl ParameterType {
+    pub fn is_randomizable(&self) -> bool {
+        matches!(self, Self::Int | Self::Float)
+    }
 }
 
 /// A parameter for a G'MIC effect.
@@ -38,6 +49,55 @@ impl Parameter {
             min: None,
             max: None,
             position,
+        }
+    }
+
+    pub fn new(
+        param_type: ParameterType,
+        default: impl Into<String>,
+        min: Option<String>,
+        max: Option<String>,
+        position: usize,
+    ) -> Self {
+        Self {
+            param_type,
+            default: default.into(),
+            min,
+            max,
+            position,
+        }
+    }
+
+    pub fn randomize(&mut self) {
+        if !self.param_type.is_randomizable() {
+            return;
+        }
+
+        let (min_val, max_val) = match (&self.min, &self.max) {
+            (Some(min), Some(max)) => (min, max),
+            _ => return,
+        };
+
+        let mut rng = rand::rng();
+
+        match self.param_type {
+            ParameterType::Int => {
+                if let (Ok(min), Ok(max)) = (min_val.parse::<i32>(), max_val.parse::<i32>()) {
+                    self.default = rng.random_range(min..=max).to_string();
+                }
+            }
+            ParameterType::Float => {
+                if let (Ok(min), Ok(max)) = (min_val.parse::<f32>(), max_val.parse::<f32>()) {
+                    let result = rng.random_range(min..=max);
+
+                    self.default = format!("{:.2}", result);
+                }
+            }
+            ParameterType::Bool => {
+                self.default = rng.random_range(0..=1).to_string();
+            }
+            ParameterType::Choice => {}
+            _ => {}
         }
     }
 
