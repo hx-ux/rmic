@@ -90,9 +90,28 @@ impl Gmic {
     }
 
     /// Adds raw arguments.
-    pub fn add_raw_arg(mut self, arg: &str) -> Self {
+    pub fn add_raw_effect(mut self, arg: &str) -> Self {
         if !arg.is_empty() {
             self.effects.push(Effect::new_raw(arg.to_string()));
+        }
+        self
+    }
+
+    pub fn add_json_effect(mut self, json: &str) -> Self {
+        if let Ok(effect) = Effect::from_json(json) {
+            self.effects.push(effect);
+        }
+        self
+    }
+
+    pub fn add_build_effect(mut self, effect: Effect) -> Self {
+        self.effects.push(effect);
+        self
+    }
+
+    pub fn randomize(mut self) -> Self {
+        for eff in self.effects.iter_mut() {
+            eff.randomize();
         }
         self
     }
@@ -145,15 +164,15 @@ impl Gmic {
 // Utility methods remain similar, but updated to use add_command
 impl Gmic {
     pub fn to_rgba(self) -> Self {
-        self.add_raw_arg("to_rgba")
+        self.add_raw_effect("to_rgba")
     }
 
     pub fn to_gray(self) -> Self {
-        self.add_raw_arg("to_gray")
+        self.add_raw_effect("to_gray")
     }
 
     pub fn solarize(self) -> Self {
-        self.add_raw_arg("solarize")
+        self.add_raw_effect("solarize")
     }
 
     pub fn rotate(self, degree: u16) -> Self {
