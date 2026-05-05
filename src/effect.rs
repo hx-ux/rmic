@@ -94,6 +94,7 @@ where
                 parameters.push(Parameter {
                     param_type: helper.param_type,
                     default: helper.default.unwrap_or_default(),
+                    name: helper.name,
                     min: helper.min,
                     max: helper.max,
                     position,
