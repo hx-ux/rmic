@@ -1,4 +1,5 @@
 use std::default;
+use std::string;
 
 use rand::prelude::*;
 use rand::rng;
@@ -14,6 +15,7 @@ pub enum ParameterType {
     Separator,
     Link,
     Note,
+    Color,
     #[default]
     Unknown,
 }
@@ -30,7 +32,7 @@ pub struct Parameter {
     /// Data type (e.g., "float", "int", "bool", "color").
     pub param_type: ParameterType,
     /// Descriptive name (optional).
-    // pub command: String,
+    pub name: Option<String>,
     /// Default value.
     pub default: String,
     /// Minimum value (optional).
@@ -46,6 +48,7 @@ impl Parameter {
         Self {
             param_type: Self::infer_param_type(value.clone()),
             default: value,
+            name: None,
             min: None,
             max: None,
             position,
@@ -55,6 +58,7 @@ impl Parameter {
     pub fn new(
         param_type: ParameterType,
         default: impl Into<String>,
+        name: Option<String>,
         min: Option<String>,
         max: Option<String>,
         position: usize,
@@ -62,6 +66,7 @@ impl Parameter {
         Self {
             param_type,
             default: default.into(),
+            name,
             min,
             max,
             position,
@@ -96,6 +101,12 @@ impl Parameter {
             ParameterType::Bool => {
                 self.default = rng.random_range(0..=1).to_string();
             }
+            ParameterType::Color => {
+                let r = rng.random_range(0..=255).to_string();
+                let g = rng.random_range(0..=255).to_string();
+                let b = rng.random_range(0..=255).to_string();
+                self.default = format!("{},{},{}", r, g, b)
+            }
             ParameterType::Choice => {}
             _ => {}
         }
@@ -112,3 +123,6 @@ impl Parameter {
         ParameterType::Choice
     }
 }
+
+// Color Type
+// afre_montagex

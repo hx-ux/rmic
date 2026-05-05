@@ -71,6 +71,7 @@ where
         #[serde(rename = "type")]
         param_type: ParameterType,
         default: Option<String>,
+        name: Option<String>,
         min: Option<String>,
         max: Option<String>,
         pos: Option<String>,
@@ -93,6 +94,7 @@ where
                 parameters.push(Parameter {
                     param_type: helper.param_type,
                     default: helper.default.unwrap_or_default(),
+                    name: helper.name,
                     min: helper.min,
                     max: helper.max,
                     position,
