@@ -216,5 +216,9 @@ impl Gmic {
             ],
         )
     }
+
+    pub fn display(self) -> Self {
+        self.add_effect("-display", &[])
+    }
 }
 
