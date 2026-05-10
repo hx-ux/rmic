@@ -34,10 +34,10 @@ impl From<io::Error> for GmicError {
 }
 
 pub struct Gmic {
-    binary: String,
-    effects: Vec<Effect>,
-    input_file: Option<PathBuf>,
-    output_file: Option<PathBuf>,
+    pub binary: String,
+    pub effects: Vec<Effect>,
+    pub input_file: Option<PathBuf>,
+    pub output_file: Option<PathBuf>,
 }
 
 impl Default for Gmic {
@@ -161,7 +161,6 @@ impl Gmic {
     }
 }
 
-// Utility methods remain similar, but updated to use add_command
 impl Gmic {
     pub fn to_rgba(self) -> Self {
         self.add_raw_effect("to_rgba")
@@ -217,4 +216,9 @@ impl Gmic {
             ],
         )
     }
+
+    pub fn display(self) -> Self {
+        self.add_effect("-display", &[])
+    }
 }
+

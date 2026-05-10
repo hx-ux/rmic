@@ -1,22 +1,28 @@
-use std::default;
-use std::string;
-
 use rand::prelude::*;
-use rand::rng;
 use serde::Deserialize;
+use strum_macros::Display;
 
-#[derive(Debug, Clone, Deserialize, PartialEq, Default)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Default, Display)]
 #[serde(rename_all = "lowercase")]
 pub enum ParameterType {
+    #[strum(to_string = "int")]
     Int,
+    #[strum(to_string = "float")]
     Float,
+    #[strum(to_string = "choice")]
     Choice,
+    #[strum(to_string = "bool")]
     Bool,
+    #[strum(to_string = "separator")]
     Separator,
+    #[strum(to_string = "link")]
     Link,
+    #[strum(to_string = "note")]
     Note,
+    #[strum(to_string = "color")]
     Color,
     #[default]
+    #[strum(to_string = "unknwon")]
     Unknown,
 }
 
@@ -126,3 +132,4 @@ impl Parameter {
 
 // Color Type
 // afre_montagex
+

@@ -59,3 +59,12 @@ fn utils_collection() {
     let result = process_images(name, effect_chain);
     assert!(result.is_ok());
 }
+
+#[test]
+fn random() {
+    let name = "blur_rotate_solatize";
+    let effect_chain = |g: Gmic| g.add_raw_effect("random_pattern 256");
+    let result = process_images(name, effect_chain);
+    assert!(result.is_ok());
+}
+

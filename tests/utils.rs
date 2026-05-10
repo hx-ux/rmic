@@ -1,7 +1,7 @@
 use rmic::{Gmic, GmicError};
 
-const INPUT_IMAGE: &str = "input.jpg";
-const OUTPUT_FOLDER: &str = "tests/out";
+pub const INPUT_IMAGE: &str = "input.jpg";
+pub const OUTPUT_FOLDER: &str = "tests/out";
 
 pub fn process_images<F>(output_file: &str, effect: F) -> Result<String, GmicError>
 where
