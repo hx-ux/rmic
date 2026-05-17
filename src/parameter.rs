@@ -38,6 +38,7 @@ pub struct Parameter {
     /// Data type (e.g., "float", "int", "bool", "color").
     pub param_type: ParameterType,
     /// Descriptive name (optional).
+
     /// Default value.
     pub default: String,
     /// Minimum value (optional).
@@ -128,4 +129,3 @@ impl Parameter {
 
 // Color Type
 // afre_montagex
-
