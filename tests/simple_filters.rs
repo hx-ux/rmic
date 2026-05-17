@@ -110,3 +110,4 @@ fn random() {
     let result = process_images(name, effect_chain);
     assert!(result.is_ok());
 }
+
