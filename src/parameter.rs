@@ -32,7 +32,7 @@ impl ParameterType {
     }
 }
 
-/// A parameter for a G'MIC effect.
+/// A parameter for a G'MIC filter.
 #[derive(Debug, Clone)]
 pub struct Parameter {
     /// Data type (e.g., "float", "int", "bool", "color").
@@ -49,6 +49,7 @@ pub struct Parameter {
     pub position: usize,
 }
 
+/// Single Paramter of an GMIC Filter
 impl Parameter {
     pub fn const_value(value: String, position: usize) -> Self {
         Self {
@@ -126,6 +127,3 @@ impl Parameter {
         ParameterType::Choice
     }
 }
-
-// Color Type
-// afre_montagex

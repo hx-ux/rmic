@@ -20,7 +20,7 @@ fn check_randomize() {
        }"#)
        .resize(1024, 1024).randomize().output(_out);
 
-    let p = gmic_task.effects.clone();
+    let p = gmic_task.filters.clone();
 
     if let Some(elem) = p.first() {
         let params = elem.parameters.clone();
@@ -53,7 +53,7 @@ fn check_params() {
         ]
         }"#).output(_out);
 
-    let p = gmic_task.effects.clone();
+    let p = gmic_task.filters.clone();
 
     if let Some(elem) = p.first() {
         let params = elem.parameters.clone();
