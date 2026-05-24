@@ -1,8 +1,8 @@
 use crate::parameter::{self, Parameter, ParameterType};
 use serde::{Deserialize, Deserializer};
-/// Represents a G'MIC effect
+/// Represents a G'MIC Filter
 #[derive(Debug, Clone, Deserialize)]
-pub struct Effect {
+pub struct Filter {
     /// The G'MIC command name.
     pub command: String,
 
@@ -15,7 +15,7 @@ pub struct Effect {
     raw: bool,
 }
 
-impl Effect {
+impl Filter {
     pub fn new(command: String, params: Vec<Parameter>) -> Self {
         Self {
             command: command.clone(),
@@ -71,7 +71,6 @@ where
         #[serde(rename = "type")]
         param_type: ParameterType,
         default: Option<String>,
-        name: Option<String>,
         min: Option<String>,
         max: Option<String>,
         pos: Option<String>,
@@ -94,7 +93,6 @@ where
                 parameters.push(Parameter {
                     param_type: helper.param_type,
                     default: helper.default.unwrap_or_default(),
-                    name: helper.name,
                     min: helper.min,
                     max: helper.max,
                     position,

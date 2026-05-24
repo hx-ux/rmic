@@ -1,2 +1,3 @@
-pub mod effect;
+pub mod filter;
+pub mod global_list;
 pub mod parameters;

@@ -3,7 +3,7 @@
 //! This library provides a builder pattern for constructing and executing G'MIC commands.
 //! It allows chaining image processing effects, setting input/output files, and executing via the CLI.
 
-mod effect;
+mod filter;
 mod parameter;
 
 use std::{
@@ -12,7 +12,7 @@ use std::{
     process::Command,
 };
 
-use crate::{effect::Effect, parameter::Parameter};
+use crate::{filter::Filter, parameter::Parameter};
 
 /// Errors that can occur during G'MIC operations.
 #[derive(Debug)]
@@ -24,7 +24,11 @@ pub enum GmicError {
     /// Input file not found.
     InputNotFound,
     /// G'MIC binary not found.
-    BinNotFound,
+    GmicNotFound,
+    /// JSON could not be parsed.
+    JsonParseError,
+    /// JSON could not be parsed.
+    EmptyEffectChain,
 }
 
 impl From<io::Error> for GmicError {
@@ -35,7 +39,7 @@ impl From<io::Error> for GmicError {
 
 pub struct Gmic {
     pub binary: String,
-    pub effects: Vec<Effect>,
+    pub filters: Vec<Filter>,
     pub input_file: Option<PathBuf>,
     pub output_file: Option<PathBuf>,
 }
@@ -44,7 +48,7 @@ impl Default for Gmic {
     fn default() -> Self {
         Self {
             binary: "gmic".to_string(),
-            effects: Vec::new(),
+            filters: Vec::new(),
             input_file: None,
             output_file: None,
         }
@@ -84,33 +88,39 @@ impl Gmic {
             .map(|(idx, value)| Parameter::const_value(value.to_string(), idx))
             .collect();
 
-        self.effects
-            .push(Effect::new(command.to_string(), parameters));
+        self.filters
+            .push(Filter::new(command.to_string(), parameters));
         self
     }
 
     /// Adds raw arguments.
     pub fn add_raw_effect(mut self, arg: &str) -> Self {
         if !arg.is_empty() {
-            self.effects.push(Effect::new_raw(arg.to_string()));
+            self.filters.push(Filter::new_raw(arg.to_string()));
         }
         self
     }
 
     pub fn add_json_effect(mut self, json: &str) -> Self {
-        if let Ok(effect) = Effect::from_json(json) {
-            self.effects.push(effect);
+        match Filter::from_json(json) {
+            Ok(effect) => {
+                self.filters.push(effect);
+                self
+            }
+            Err(_) => {
+                log::warn!("Failed to parse JSON effect: {}", json);
+                self
+            }
         }
-        self
     }
 
-    pub fn add_build_effect(mut self, effect: Effect) -> Self {
-        self.effects.push(effect);
+    pub fn add_build_effect(mut self, effect: Filter) -> Self {
+        self.filters.push(effect);
         self
     }
 
     pub fn randomize(mut self) -> Self {
-        for eff in self.effects.iter_mut() {
+        for eff in self.filters.iter_mut() {
             eff.randomize();
         }
         self
@@ -123,7 +133,7 @@ impl Gmic {
             command.arg("-input").arg(input);
         }
 
-        for effect in &self.effects {
+        for effect in &self.filters {
             command.args(effect.forargs());
         }
 
@@ -135,10 +145,14 @@ impl Gmic {
     }
     /// Executes the built command.
     pub fn execute(&self) -> Result<(), GmicError> {
-        if let Some(ref input) = self.input_file {
-            if !input.exists() {
-                return Err(GmicError::InputNotFound);
-            }
+        if self.filters.iter().count() == 0 {
+            return Err(GmicError::EmptyEffectChain);
+        }
+
+        if let Some(ref input) = self.input_file
+            && !input.exists()
+        {
+            return Err(GmicError::InputNotFound);
         }
 
         let output = self.generate_command().output()?;
@@ -146,8 +160,9 @@ impl Gmic {
         if output.status.success() {
             Ok(())
         } else {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            Err(GmicError::ExecutionFailed(stderr.to_string()))
+            Err(GmicError::ExecutionFailed(
+                String::from_utf8_lossy(&output.stderr).to_string(),
+            ))
         }
     }
 
@@ -221,4 +236,3 @@ impl Gmic {
         self.add_effect("-display", &[])
     }
 }
-

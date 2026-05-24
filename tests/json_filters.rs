@@ -1,10 +1,10 @@
 use rmic::{Gmic, GmicError};
 
-use crate::utils::{process_images, INPUT_IMAGE, OUTPUT_FOLDER};
+use crate::utils::{INPUT_IMAGE, OUTPUT_FOLDER, process_images};
 mod utils;
 
 #[test]
-fn chained_json() {
+fn check_randomize() {
     let _out = format!("{}/{}.jpg", OUTPUT_FOLDER, "phase");
 
     let gmic_task =
@@ -20,7 +20,7 @@ fn chained_json() {
        }"#)
        .resize(1024, 1024).randomize().output(_out);
 
-    let p = gmic_task.effects.clone();
+    let p = gmic_task.filters.clone();
 
     if let Some(elem) = p.first() {
         let params = elem.parameters.clone();
@@ -32,9 +32,6 @@ fn chained_json() {
 
     let _ = gmic_task.execute();
 }
-
-#[test]
-fn check_random_color() {}
 
 #[test]
 fn check_params() {
@@ -56,7 +53,7 @@ fn check_params() {
         ]
         }"#).output(_out);
 
-    let p = gmic_task.effects.clone();
+    let p = gmic_task.filters.clone();
 
     if let Some(elem) = p.first() {
         let params = elem.parameters.clone();
@@ -71,4 +68,45 @@ fn check_params() {
     }
 
     let _ = gmic_task.execute();
+}
+
+#[test]
+fn invalid_json_effect() {
+    let _out = format!("{}/{}.jpg", OUTPUT_FOLDER, "linear_gradient");
+
+    let gmic_task = Gmic::new()
+        .input(INPUT_IMAGE)
+        .add_json_effect(
+            r#"{
+            "name": "Plasma",
+            "lang": "en",
+            "command": "fx_plasma",
+            "command_preview": "fx_plasma",
+            "parameters": [
+                "type": "int",
+                "name": "Scale",
+                "default": "8",
+                "min": "2",
+                "max": "10",
+                "pos": "3"
+              },
+              { "type": "bool", "name": "Randomize", "default": "0", "pos": "4" },
+              {
+                "type": "bool",
+                "name": "Transparency",
+                "default": "0",
+                "pos": "5"
+              },
+              { "type": "separator" },
+              {
+                "type": "note",
+                "text": "Author: David Tschumperlé.      Latest Update: 2011/03/20."
+              }
+            ]
+          }"#,
+        )
+        .output(_out);
+
+    let r = gmic_task.execute();
+    assert!(r.is_err())
 }
