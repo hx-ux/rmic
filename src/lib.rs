@@ -24,7 +24,11 @@ pub enum GmicError {
     /// Input file not found.
     InputNotFound,
     /// G'MIC binary not found.
-    BinNotFound,
+    GmicNotFound,
+    /// JSON could not be parsed.
+    JsonParseError,
+    /// JSON could not be parsed.
+    EmptyEffectChain,
 }
 
 impl From<io::Error> for GmicError {
@@ -98,10 +102,16 @@ impl Gmic {
     }
 
     pub fn add_json_effect(mut self, json: &str) -> Self {
-        if let Ok(effect) = Effect::from_json(json) {
-            self.effects.push(effect);
+        match Effect::from_json(json) {
+            Ok(effect) => {
+                self.effects.push(effect);
+                self
+            }
+            Err(_) => {
+                log::warn!("Failed to parse JSON effect: {}", json);
+                self
+            }
         }
-        self
     }
 
     pub fn add_build_effect(mut self, effect: Effect) -> Self {
@@ -135,10 +145,14 @@ impl Gmic {
     }
     /// Executes the built command.
     pub fn execute(&self) -> Result<(), GmicError> {
-        if let Some(ref input) = self.input_file {
-            if !input.exists() {
-                return Err(GmicError::InputNotFound);
-            }
+        if self.effects.iter().count() == 0 {
+            return Err(GmicError::EmptyEffectChain);
+        }
+
+        if let Some(ref input) = self.input_file
+            && !input.exists()
+        {
+            return Err(GmicError::InputNotFound);
         }
 
         let output = self.generate_command().output()?;
@@ -146,8 +160,9 @@ impl Gmic {
         if output.status.success() {
             Ok(())
         } else {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            Err(GmicError::ExecutionFailed(stderr.to_string()))
+            Err(GmicError::ExecutionFailed(
+                String::from_utf8_lossy(&output.stderr).to_string(),
+            ))
         }
     }
 
@@ -221,4 +236,3 @@ impl Gmic {
         self.add_effect("-display", &[])
     }
 }
-

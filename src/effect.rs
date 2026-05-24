@@ -71,7 +71,6 @@ where
         #[serde(rename = "type")]
         param_type: ParameterType,
         default: Option<String>,
-        name: Option<String>,
         min: Option<String>,
         max: Option<String>,
         pos: Option<String>,
