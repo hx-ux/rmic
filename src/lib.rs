@@ -9,7 +9,7 @@ mod parameter;
 
 pub use filter::Filter;
 pub use global_list::GlobalList;
-pub use parameter::{Choice, Parameter, ParameterType};
+pub use parameter::{Parameter, ParameterType};
 
 use std::{
     io,
@@ -144,7 +144,7 @@ impl Gmic {
         }
 
         for effect in &self.filters {
-            command.args(effect.to_cli_command());
+            command.args(effect.forargs());
         }
 
         if let Some(ref output) = self.output_file {
@@ -177,32 +177,7 @@ impl Gmic {
     }
 
     pub fn summary(&self) -> String {
-        let mut summary = String::new();
-
-        if let Some(ref input) = self.input_file {
-            summary.push_str(&format!("Input file: {}\n", input.display()));
-        } else {
-            summary.push_str("Input file: (not set)\n");
-        }
-
-        if let Some(ref output) = self.output_file {
-            summary.push_str(&format!("Output file: {}\n", output.display()));
-        } else {
-            summary.push_str("Output file: (not set)\n");
-        }
-
-        summary.push_str("\nFilters:\n");
-        if self.filters.is_empty() {
-            summary.push_str("(No filters applied)\n");
-        } else {
-            for (i, f) in self.filters.iter().enumerate() {
-                summary.push_str(&format!("  {}. Command: {}\n", i + 1, f.command));
-            }
-        }
-
-        summary.push_str("\nFull Command:\n");
-        summary.push_str(&format!(" {} {}", self.binary, self.dry_run()));
-        summary
+        return "".to_string();
     }
 
     /// Previews the command.

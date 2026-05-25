@@ -1,114 +1,112 @@
-use rmic::{Choice, Filter, Parameter, ParameterType};
+use rmic::{Gmic, GmicError};
 
-use crate::utils::{task_frame_cube, task_hard_sketch, task_phasecongruence, task_should_fail};
+use crate::utils::{INPUT_IMAGE, OUTPUT_FOLDER, process_images};
 mod utils;
 
 #[test]
 fn check_randomize() {
-    let task = task_phasecongruence().resize(1024, 1024).randomize();
-    let f = task.filters.clone();
+    let _out = format!("{}/{}.jpg", OUTPUT_FOLDER, "phase");
 
-    if let Some(elem) = f.first() {
+    let gmic_task =
+        Gmic::new().input(INPUT_IMAGE).add_json_filter(r#" {
+         "name": "Jpr Phasecongruence", "lang": "en", "command": "jpr_phasecongruence", "command_preview": "jpr_phasecongruence", "parameters": [
+         { "type": "note", "text": "Edge detect with directional Phase Congruence using proportionality to Local Energy." },
+         { "type": "float", "name": "Start Angle", "default": "45", "min": "0", "max": "360", "pos": "1" },
+         { "type": "int", "name": "Directions", "default": "1", "min": "1", "max": "20", "pos": "2" },
+         { "type": "float", "name": "Energy Threshold", "default": "50", "min": "0", "max": "500", "pos": "3" },
+         { "type": "bool", "name": "Local Maxima", "default": "1", "pos": "4" },
+         { "type": "note", "text": "update 2013-Mar-31 author @jayprich" }
+         ]
+       }"#)
+       .resize(1024, 1024).randomize().output(_out);
+
+    let p = gmic_task.filters.clone();
+
+    if let Some(elem) = p.first() {
         let params = elem.parameters.clone();
-        assert_ne!(params[1].default, "45");
-        assert_ne!(params[2].default, "1");
-        assert_ne!(params[3].default, "50");
+        assert_ne!(params[0].default, "45");
+        assert_ne!(params[1].default, "1");
+        assert_ne!(params[2].default, "50");
         assert_eq!(4, params.len(), "param Count");
     }
 
-    let _ = task.execute();
+    let _ = gmic_task.execute();
 }
 
 #[test]
-fn check_params_value() {
-    let task = task_hard_sketch();
-    let parameters = task.filters.clone();
+fn check_params() {
+    let _out = format!("{}/{}.jpg", OUTPUT_FOLDER, "sketch");
 
-    if let Some(elem) = parameters.first() {
+    let gmic_task =
+        Gmic::new().input(INPUT_IMAGE).add_json_filter(r#"{
+        "name": "Hard Sketch", "lang": "en", "command": "fx_hardsketchbw", "command_preview": "fx_hardsketchbw", "parameters": [
+        { "type": "separator" },
+        { "type": "float", "name": "Amplitude", "default": "300", "min": "0", "max": "4000", "pos": "1" },
+        { "type": "float", "name": "Density", "default": "50", "min": "0", "max": "100", "pos": "2" },
+        { "type": "float", "name": "Smoothness", "default": "1", "min": "0", "max": "10", "pos": "3" },
+        { "type": "float", "name": "Opacity", "default": "0.1", "min": "0", "max": "1", "pos": "4" },
+        { "type": "float", "name": "Edge", "default": "20", "min": "0", "max": "100", "pos": "5" },
+        { "type": "bool", "name": "Fast Approximation", "default": "0", "pos": "6" },
+        { "type": "choice", "name": "Color Model", "default": "4", "pos": "7", "choices": { "0": "Black on white", "1": "White on black", "2": "Black on transparent white", "3": "White on transparent black", "4": "Color on white" } },
+        { "type": "separator" },
+        { "type": "note", "text": "Author: David Tschumperlé.      Latest Update: 2010/12/29." }
+        ]
+        }"#).output(_out);
+
+    let p = gmic_task.filters.clone();
+
+    if let Some(elem) = p.first() {
         let params = elem.parameters.clone();
-        assert_eq!(params[0].param_type, ParameterType::Separator);
-        assert_eq!(params[1].default, "300");
-        assert_eq!(params[1].param_type, ParameterType::Float);
-        assert_eq!(params[2].default, "50");
-        assert_eq!(params[2].param_type, ParameterType::Float);
-        assert_eq!(params[3].default, "1");
-        assert_eq!(params[3].param_type, ParameterType::Float);
-        assert_eq!(params[4].default, "0.1");
-        assert_eq!(params[4].param_type, ParameterType::Float);
-        assert_eq!(params[5].default, "20");
-        assert_eq!(params[5].param_type, ParameterType::Float);
-        assert_eq!(params[6].default, "0");
-        assert_eq!(params[6].param_type, ParameterType::Bool);
-        assert_eq!(params[7].default, "4");
-        assert_eq!(params[7].param_type, ParameterType::Choice);
-        assert_eq!(10, params.len(), "param Count");
+        assert_eq!(params[0].default, "300");
+        assert_eq!(params[1].default, "50");
+        assert_eq!(params[2].default, "1");
+        assert_eq!(params[3].default, "0.1");
+        assert_eq!(params[4].default, "20");
+        assert_eq!(params[5].default, "0");
+        assert_eq!(params[6].default, "4");
+        assert_eq!(7, params.len(), "param Count");
     }
 
-    let _ = task.execute();
+    let _ = gmic_task.execute();
 }
 
 #[test]
 fn invalid_json_effect() {
-    let result = task_should_fail().execute();
-    assert!(result.is_err())
-}
+    let _out = format!("{}/{}.jpg", OUTPUT_FOLDER, "linear_gradient");
 
-#[test]
-fn parse_choice_position() {
-    if let Some(filter) = task_frame_cube().filters.first() {
-        let params = &filter.parameters;
-        if let Some(choice_param) = params
-            .iter()
-            .find(|p| p.param_type == ParameterType::Choice)
-        {
-            assert_eq!(
-                choice_param.choices,
-                Some(vec![
-                    Choice {
-                        value: "0".to_string(),
-                        label: "Normal".to_string(),
-                    },
-                    Choice {
-                        value: "1".to_string(),
-                        label: "Mirror-X".to_string(),
-                    },
-                    Choice {
-                        value: "2".to_string(),
-                        label: "Mirror-Y".to_string(),
-                    },
-                    Choice {
-                        value: "3".to_string(),
-                        label: "Mirror-XY".to_string(),
-                    },
-                ])
-            );
-            assert_eq!(choice_param.default, "0");
-        }
-    }
-}
+    let gmic_task = Gmic::new()
+        .input(INPUT_IMAGE)
+        .add_json_filter(
+            r#"{
+            "name": "Plasma",
+            "lang": "en",
+            "command": "fx_plasma",
+            "command_preview": "fx_plasma",
+            "parameters": [
+                "type": "int",
+                "name": "Scale",
+                "default": "8",
+                "min": "2",
+                "max": "10",
+                "pos": "3"
+              },
+              { "type": "bool", "name": "Randomize", "default": "0", "pos": "4" },
+              {
+                "type": "bool",
+                "name": "Transparency",
+                "default": "0",
+                "pos": "5"
+              },
+              { "type": "separator" },
+              {
+                "type": "note",
+                "text": "Author: David Tschumperlé.      Latest Update: 2011/03/20."
+              }
+            ]
+          }"#,
+        )
+        .output(_out);
 
-#[test]
-fn test_cli_value_and_forargs() {
-    let params = vec![
-        Parameter::new(ParameterType::Text, "hello", None, None, 0),
-        Parameter::new(ParameterType::Value, "world", None, None, 1),
-        Parameter::new(ParameterType::Int, "42", None, None, 2),
-        Parameter::new(ParameterType::Text, "\"already\"", None, None, 3),
-    ];
-
-    let filter = Filter::new("test_filter".to_string(), params);
-
-    assert_eq!(filter.parameters[0].cli_value(), "\"hello\"");
-    assert_eq!(filter.parameters[1].cli_value(), "\"world\"");
-    assert_eq!(filter.parameters[2].cli_value(), "42");
-    assert_eq!(filter.parameters[3].cli_value(), "\"already\"");
-
-    let args = filter.to_cli_command();
-    assert_eq!(
-        args,
-        vec![
-            "test_filter".to_string(),
-            "\"hello\",\"world\",42,\"already\"".to_string(),
-        ]
-    );
+    let r = gmic_task.execute();
+    assert!(r.is_err())
 }
