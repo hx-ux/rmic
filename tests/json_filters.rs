@@ -8,7 +8,7 @@ fn check_randomize() {
     let _out = format!("{}/{}.jpg", OUTPUT_FOLDER, "phase");
 
     let gmic_task =
-        Gmic::new().input(INPUT_IMAGE).add_json_effect(r#" {
+        Gmic::new().input(INPUT_IMAGE).add_json_filter(r#" {
          "name": "Jpr Phasecongruence", "lang": "en", "command": "jpr_phasecongruence", "command_preview": "jpr_phasecongruence", "parameters": [
          { "type": "note", "text": "Edge detect with directional Phase Congruence using proportionality to Local Energy." },
          { "type": "float", "name": "Start Angle", "default": "45", "min": "0", "max": "360", "pos": "1" },
@@ -38,7 +38,7 @@ fn check_params() {
     let _out = format!("{}/{}.jpg", OUTPUT_FOLDER, "sketch");
 
     let gmic_task =
-        Gmic::new().input(INPUT_IMAGE).add_json_effect(r#"{
+        Gmic::new().input(INPUT_IMAGE).add_json_filter(r#"{
         "name": "Hard Sketch", "lang": "en", "command": "fx_hardsketchbw", "command_preview": "fx_hardsketchbw", "parameters": [
         { "type": "separator" },
         { "type": "float", "name": "Amplitude", "default": "300", "min": "0", "max": "4000", "pos": "1" },
@@ -76,7 +76,7 @@ fn invalid_json_effect() {
 
     let gmic_task = Gmic::new()
         .input(INPUT_IMAGE)
-        .add_json_effect(
+        .add_json_filter(
             r#"{
             "name": "Plasma",
             "lang": "en",

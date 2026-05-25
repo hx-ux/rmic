@@ -21,8 +21,20 @@ pub enum ParameterType {
     Note,
     #[strum(to_string = "color")]
     Color,
+    #[strum(to_string = "text")]
+    Text,
+    #[strum(to_string = "button")]
+    Button,
+    #[strum(to_string = "point")]
+    Point,
+    #[strum(to_string = "value")]
+    Value,
+    #[strum(to_string = "file")]
+    File,
+    #[strum(to_string = "folder")]
+    Folder,
     #[default]
-    #[strum(to_string = "unknwon")]
+    #[strum(to_string = "unknown")]
     Unknown,
 }
 
@@ -38,7 +50,7 @@ pub struct Parameter {
     /// Data type (e.g., "float", "int", "bool", "color").
     pub param_type: ParameterType,
     /// Descriptive name (optional).
-
+    pub name: Option<String>,
     /// Default value.
     pub default: String,
     /// Minimum value (optional).
@@ -57,6 +69,7 @@ impl Parameter {
             default: value,
             min: None,
             max: None,
+            name: None,
             position,
         }
     }
@@ -71,6 +84,7 @@ impl Parameter {
         Self {
             param_type,
             default: default.into(),
+            name: None,
             min,
             max,
             position,

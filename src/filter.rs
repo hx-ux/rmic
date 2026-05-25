@@ -5,14 +5,14 @@ use serde::{Deserialize, Deserializer};
 pub struct Filter {
     /// The G'MIC command name.
     pub command: String,
-
     /// List of parameters and other elements.
     #[serde(deserialize_with = "deserialize_parameters")]
     pub parameters: Vec<Parameter>,
-
     /// a raw string with all the commands in it
     #[serde(skip, default)]
     raw: bool,
+    /// name of the effect
+    name: Option<String>,
 }
 
 impl Filter {
@@ -21,6 +21,7 @@ impl Filter {
             command: command.clone(),
             parameters: params,
             raw: false,
+            name: None,
         }
     }
 
@@ -29,6 +30,7 @@ impl Filter {
             command,
             parameters: vec![],
             raw: true,
+            name: None,
         }
     }
 
@@ -71,6 +73,7 @@ where
         #[serde(rename = "type")]
         param_type: ParameterType,
         default: Option<String>,
+        name: Option<String>,
         min: Option<String>,
         max: Option<String>,
         pos: Option<String>,
@@ -96,6 +99,7 @@ where
                     min: helper.min,
                     max: helper.max,
                     position,
+                    name: helper.name,
                 });
             }
             _ => {}

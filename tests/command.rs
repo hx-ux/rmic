@@ -5,7 +5,7 @@ mod utils;
 #[test]
 fn check_dryrun() {
     let name = "water_params";
-    let effect = |gmic: Gmic| gmic.add_raw_effect("polaroid 5,30");
+    let effect = |gmic: Gmic| gmic.add_raw_filter("polaroid 5,30");
     let result = process_images(name, effect);
 
     let mut command = "".to_string();
