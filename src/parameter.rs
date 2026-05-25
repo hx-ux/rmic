@@ -4,6 +4,7 @@ use strum_macros::Display;
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Default, Display)]
 #[serde(rename_all = "lowercase")]
+#[allow(unused_attributes)]
 pub enum ParameterType {
     #[strum(to_string = "int")]
     Int,
@@ -13,6 +14,10 @@ pub enum ParameterType {
     Choice,
     #[strum(to_string = "bool")]
     Bool,
+    #[strum(to_string = "value")]
+    Value,
+    #[strum(to_string = "point")]
+    Point,
     #[strum(to_string = "separator")]
     Separator,
     #[strum(to_string = "link")]
@@ -25,10 +30,7 @@ pub enum ParameterType {
     Text,
     #[strum(to_string = "button")]
     Button,
-    #[strum(to_string = "point")]
-    Point,
-    #[strum(to_string = "value")]
-    Value,
+
     #[strum(to_string = "file")]
     File,
     #[strum(to_string = "folder")]
@@ -39,8 +41,19 @@ pub enum ParameterType {
 }
 
 impl ParameterType {
-    pub fn is_randomizable(&self) -> bool {
-        matches!(self, Self::Int | Self::Float)
+    pub fn is_data_type(&self) -> bool {
+        let type_check = matches!(
+            self,
+            Self::Int
+                | Self::Float
+                | Self::Bool
+                | Self::Choice
+                | Self::Color
+                | Self::Text
+                | Self::Value
+                | Self::Point
+        );
+        type_check
     }
 }
 
@@ -81,9 +94,17 @@ impl Parameter {
         max: Option<String>,
         position: usize,
     ) -> Self {
+        let mut default_str = default.into();
+        //  these values are written as 0,"value" in the cli
+        if matches!(param_type, ParameterType::Text | ParameterType::Value) {
+            if !default_str.starts_with('"') && !default_str.ends_with('"') {
+                default_str = format!("\"{}\"", default_str);
+            }
+        }
+
         Self {
             param_type,
-            default: default.into(),
+            default: default_str,
             name: None,
             min,
             max,
@@ -92,7 +113,7 @@ impl Parameter {
     }
 
     pub fn randomize(&mut self) {
-        if !self.param_type.is_randomizable() {
+        if !self.param_type.is_data_type() {
             return;
         }
 
@@ -125,8 +146,15 @@ impl Parameter {
                 let b = rng.random_range(0..=255).to_string();
                 self.default = format!("{},{},{}", r, g, b)
             }
-            ParameterType::Choice => {}
-            _ => {}
+            ParameterType::Choice => {
+                if let (Ok(min), Ok(max)) = (min_val.parse::<i32>(), max_val.parse::<i32>()) {
+                    self.default = rng.random_range(min..=max).to_string();
+                }
+            }
+            // Point can be from -100 to +100
+            _ => {
+                return;
+            }
         }
     }
 

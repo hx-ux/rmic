@@ -1,4 +1,4 @@
-use rmic::{Gmic, GmicError};
+use rmic::{Filter, Gmic, GmicError};
 
 pub const INPUT_IMAGE: &str = "input.jpg";
 pub const OUTPUT_FOLDER: &str = "tests/out";
@@ -51,6 +51,17 @@ pub fn task_hard_sketch() -> Gmic {
         }"#).output(_out);
 
     gmic_task
+}
+
+pub fn syntectic_filter() -> Filter {
+    Filter::from_json(r#" {
+     "name": "test", "lang": "en", "command": "test", "command_preview": "test", "parameters": [
+     { "type": "note", "text": "note" },
+     { "type": "float", "name": "Start Angle", "default": "45", "min": "0", "max": "360", "pos": "1" },
+     { "type": "int", "name": "Directions", "default": "1", "min": "1", "max": "20", "pos": "2" },
+     { "type": "bool", "name": "Local Maxima", "default": "1", "pos": "4" },
+     ]
+   }"#).unwrap()
 }
 
 pub fn task_should_fail() -> Gmic {
