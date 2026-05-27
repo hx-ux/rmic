@@ -79,6 +79,7 @@ where
         #[serde(rename = "type")]
         param_type: ParameterType,
         default: Option<String>,
+        position: Option<String>,
         name: Option<String>,
         min: Option<String>,
         max: Option<String>,
@@ -87,6 +88,7 @@ where
 
     let helpers: Vec<ParamHelper> = Vec::deserialize(deserializer)?;
     let mut parameters = Vec::new();
+
     for helper in helpers {
         let position = helper
             .pos
@@ -94,14 +96,25 @@ where
             .and_then(|s| s.parse().ok())
             .unwrap_or(0);
 
-        parameters.push(Parameter {
-            param_type: helper.param_type,
-            default: helper.default.unwrap_or_default(),
-            min: helper.min,
-            max: helper.max,
-            position,
-            name: helper.name,
-        });
+        let mut default: Option<String> = None;
+        if let Some(val) = helper.default {
+            default = Some(val);
+        } else if let Some(val) = helper.position {
+            default = Some(val);
+        }
+
+        if default.is_some() {
+            parameters.push(Parameter {
+                param_type: helper.param_type,
+                default: default.unwrap(),
+                min: helper.min,
+                max: helper.max,
+                position,
+                name: helper.name,
+            });
+        }
+        // }
+        // }
     }
 
     Ok(parameters)

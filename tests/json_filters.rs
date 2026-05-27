@@ -1,6 +1,8 @@
 use rmic::ParameterType;
 
-use crate::utils::{syntectic_filter, task_hard_sketch, task_phasecongruence, task_should_fail};
+use crate::utils::{
+    syntectic_filter, task_frame_cube, task_hard_sketch, task_phasecongruence, task_should_fail,
+};
 mod utils;
 
 #[test]
@@ -57,6 +59,17 @@ fn invalid_json_effect() {
 fn check_filter_parsing() {
     let g = syntectic_filter();
     let u = g.parameters;
+
+    // let task = task_phasecongruence().resize(1024, 1024).randomize();
+    // assert!(result.is_err())
+}
+
+#[test]
+fn parse_choice_position() {
+    let g = task_frame_cube();
+
+    let res = g.execute();
+    assert!(res.is_ok());
 
     // let task = task_phasecongruence().resize(1024, 1024).randomize();
     // assert!(result.is_err())

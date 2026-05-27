@@ -86,3 +86,93 @@ pub fn task_should_fail() -> Gmic {
         )
         .output("none")
 }
+
+pub fn task_frame_cube() -> Gmic {
+    let _out = format!("{}/{}.jpg", OUTPUT_FOLDER, "cube");
+    Gmic::new()
+        .input(INPUT_IMAGE)
+        .add_json_filter(
+            r#"{
+            "name": "Frame [Cube]",
+            "lang": "en",
+            "command": "fx_frame_cube",
+            "command_preview": "fx_frame_cube",
+            "parameters": [
+              {
+                "type": "note",
+                "text": " "
+              },
+              { "type": "separator" },
+              {
+                "type": "float",
+                "name": "Depth",
+                "default": "3",
+                "min": "0",
+                "max": "30",
+                "pos": "1"
+              },
+              {
+                "type": "point",
+                "name": "Center",
+                "position": "50,50",
+                "pos": "2"
+              },
+              {
+                "type": "choice",
+                "name": "Left Side Orientation",
+                "default": "0",
+                "pos": "4",
+                "choices": {
+                  "0": "Normal",
+                  "1": "Mirror-X",
+                  "2": "Mirror-Y",
+                  "3": "Mirror-XY"
+                }
+              },
+              {
+                "type": "choice",
+                "name": "Right Side Orientation",
+                "default": "0",
+                "pos": "5",
+                "choices": {
+                  "0": "Normal",
+                  "1": "Mirror-X",
+                  "2": "Mirror-Y",
+                  "3": "Mirror-XY"
+                }
+              },
+              {
+                "type": "choice",
+                "name": "Upper Side Orientation",
+                "default": "0",
+                "pos": "6",
+                "choices": {
+                  "0": "Normal",
+                  "1": "Mirror-X",
+                  "2": "Mirror-Y",
+                  "3": "Mirror-XY"
+                }
+              },
+              {
+                "type": "choice",
+                "name": "Lower Side Orientation",
+                "default": "0",
+                "pos": "7",
+                "choices": {
+                  "0": "Normal",
+                  "1": "Mirror-X",
+                  "2": "Mirror-Y",
+                  "3": "Mirror-XY"
+                }
+              },
+              { "type": "separator" },
+              {
+                "type": "note",
+                "text": "Author: David Tschumperlé, Angelo Lama.       Latest Update: 2012/01/29."
+              }
+            ]
+            }
+"#,
+        )
+        .output(_out)
+}

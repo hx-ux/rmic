@@ -152,6 +152,11 @@ impl Parameter {
                 }
             }
             // Point can be from -100 to +100
+            ParameterType::Point => {
+                let x = rng.random_range(-100..=100).to_string();
+                let y = rng.random_range(-100..=100).to_string();
+                self.default = format!("{},{}", x, y)
+            }
             _ => {
                 return;
             }
