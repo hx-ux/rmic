@@ -1,5 +1,6 @@
-use crate::parameter::{Parameter, ParameterType};
+use crate::parameter::{Choice, Parameter, ParameterType};
 use serde::{Deserialize, Deserializer};
+use std::collections::BTreeMap;
 /// Represents a G'MIC Filter
 #[derive(Debug, Clone, Deserialize)]
 pub struct Filter {
@@ -36,7 +37,7 @@ impl Filter {
 
     /// Returns ["command", "value1,value2,..."] or the raw string.
     /// Skips commands that are "_none" (no-op/placeholder in G'MIC definitions).
-    pub fn forargs(&self) -> Vec<String> {
+    pub fn to_cli_command(&self) -> Vec<String> {
         if self.command == "_none_" {
             return vec![];
         }
@@ -52,7 +53,7 @@ impl Filter {
             .parameters
             .iter()
             .filter(|p| p.param_type.is_data_type())
-            .map(|p| p.default.clone())
+            .map(|p| p.cli_value())
             .collect::<Vec<_>>()
             .join(",");
 
@@ -87,6 +88,8 @@ where
         min: Option<String>,
         max: Option<String>,
         pos: Option<String>,
+        #[serde(default)]
+        choices: Option<BTreeMap<String, String>>,
     }
 
     let helpers: Vec<ParamHelper> = Vec::deserialize(deserializer)?;
@@ -108,14 +111,21 @@ where
             default = Some(val);
         }
 
-        if default.is_some() {
+        let choices = helper.choices.map(|m| {
+            m.into_iter()
+                .map(|(value, label)| Choice { value, label })
+                .collect()
+        });
+
+        if let Some(default_val) = default {
             parameters.push(Parameter {
                 param_type: helper.param_type,
-                default: default.unwrap(),
+                default: default_val,
                 min: helper.min,
                 max: helper.max,
                 position,
                 name: helper.name,
+                choices,
             });
         }
     }
