@@ -193,7 +193,7 @@ impl Gmic {
 
         summary.push_str("\nFilters:\n");
         if self.filters.is_empty() {
-            summary.push_str("  (No filters applied)\n");
+            summary.push_str("(No filters applied)\n");
         } else {
             for (i, f) in self.filters.iter().enumerate() {
                 summary.push_str(&format!("  {}. Command: {}\n", i + 1, f.command));

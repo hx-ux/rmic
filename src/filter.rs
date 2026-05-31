@@ -79,7 +79,10 @@ where
         #[serde(rename = "type")]
         param_type: ParameterType,
         default: Option<String>,
+        // fallback for default if type == point
         position: Option<String>,
+        // fallback for default if type == value
+        value: Option<String>,
         name: Option<String>,
         min: Option<String>,
         max: Option<String>,
@@ -101,6 +104,8 @@ where
             default = Some(val);
         } else if let Some(val) = helper.position {
             default = Some(val);
+        } else if let Some(val) = helper.value {
+            default = Some(val);
         }
 
         if default.is_some() {
@@ -113,8 +118,6 @@ where
                 name: helper.name,
             });
         }
-        // }
-        // }
     }
 
     Ok(parameters)

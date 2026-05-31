@@ -30,7 +30,6 @@ pub enum ParameterType {
     Text,
     #[strum(to_string = "button")]
     Button,
-
     #[strum(to_string = "file")]
     File,
     #[strum(to_string = "folder")]
