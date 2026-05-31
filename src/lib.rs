@@ -9,7 +9,7 @@ mod parameter;
 
 pub use filter::Filter;
 pub use global_list::GlobalList;
-pub use parameter::{Parameter, ParameterType};
+pub use parameter::{Choice, Parameter, ParameterType};
 
 use std::{
     io,
@@ -144,7 +144,7 @@ impl Gmic {
         }
 
         for effect in &self.filters {
-            command.args(effect.forargs());
+            command.args(effect.to_cli_command());
         }
 
         if let Some(ref output) = self.output_file {

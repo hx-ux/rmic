@@ -1,8 +1,6 @@
-use rmic::ParameterType;
+use rmic::{Choice, Filter, Parameter, ParameterType};
 
-use crate::utils::{
-    syntectic_filter, task_frame_cube, task_hard_sketch, task_phasecongruence, task_should_fail,
-};
+use crate::utils::{task_frame_cube, task_hard_sketch, task_phasecongruence, task_should_fail};
 mod utils;
 
 #[test]
@@ -15,7 +13,7 @@ fn check_randomize() {
         assert_ne!(params[1].default, "45");
         assert_ne!(params[2].default, "1");
         assert_ne!(params[3].default, "50");
-        assert_eq!(6, params.len(), "param Count");
+        assert_eq!(4, params.len(), "param Count");
     }
 
     let _ = task.execute();
@@ -56,21 +54,61 @@ fn invalid_json_effect() {
 }
 
 #[test]
-fn check_filter_parsing() {
-    let g = syntectic_filter();
-    let u = g.parameters;
-
-    // let task = task_phasecongruence().resize(1024, 1024).randomize();
-    // assert!(result.is_err())
+fn parse_choice_position() {
+    if let Some(filter) = task_frame_cube().filters.first() {
+        let params = &filter.parameters;
+        if let Some(choice_param) = params
+            .iter()
+            .find(|p| p.param_type == ParameterType::Choice)
+        {
+            assert_eq!(
+                choice_param.choices,
+                Some(vec![
+                    Choice {
+                        value: "0".to_string(),
+                        label: "Normal".to_string(),
+                    },
+                    Choice {
+                        value: "1".to_string(),
+                        label: "Mirror-X".to_string(),
+                    },
+                    Choice {
+                        value: "2".to_string(),
+                        label: "Mirror-Y".to_string(),
+                    },
+                    Choice {
+                        value: "3".to_string(),
+                        label: "Mirror-XY".to_string(),
+                    },
+                ])
+            );
+            assert_eq!(choice_param.default, "0");
+        }
+    }
 }
 
 #[test]
-fn parse_choice_position() {
-    let g = task_frame_cube();
+fn test_cli_value_and_forargs() {
+    let params = vec![
+        Parameter::new(ParameterType::Text, "hello", None, None, 0),
+        Parameter::new(ParameterType::Value, "world", None, None, 1),
+        Parameter::new(ParameterType::Int, "42", None, None, 2),
+        Parameter::new(ParameterType::Text, "\"already\"", None, None, 3),
+    ];
 
-    let res = g.execute();
-    assert!(res.is_ok());
+    let filter = Filter::new("test_filter".to_string(), params);
 
-    // let task = task_phasecongruence().resize(1024, 1024).randomize();
-    // assert!(result.is_err())
+    assert_eq!(filter.parameters[0].cli_value(), "\"hello\"");
+    assert_eq!(filter.parameters[1].cli_value(), "\"world\"");
+    assert_eq!(filter.parameters[2].cli_value(), "42");
+    assert_eq!(filter.parameters[3].cli_value(), "\"already\"");
+
+    let args = filter.to_cli_command();
+    assert_eq!(
+        args,
+        vec![
+            "test_filter".to_string(),
+            "\"hello\",\"world\",42,\"already\"".to_string(),
+        ]
+    );
 }

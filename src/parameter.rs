@@ -56,6 +56,15 @@ impl ParameterType {
     }
 }
 
+/// A choice option for `ParameterType::Choice`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Choice {
+    /// Index for mapping
+    pub value: String,
+    /// Description
+    pub label: String,
+}
+
 /// A parameter for a G'MIC filter.
 #[derive(Debug, Clone)]
 pub struct Parameter {
@@ -71,6 +80,8 @@ pub struct Parameter {
     pub max: Option<String>,
     /// Position in the parameter list.
     pub position: usize,
+    /// Available choices for `ParameterType::Choice` (parsed from JSON).
+    pub choices: Option<Vec<Choice>>,
 }
 
 /// Single Paramter of an GMIC Filter
@@ -83,6 +94,7 @@ impl Parameter {
             max: None,
             name: None,
             position,
+            choices: None,
         }
     }
 
@@ -93,22 +105,27 @@ impl Parameter {
         max: Option<String>,
         position: usize,
     ) -> Self {
-        let mut default_str = default.into();
-        //  these values are written as 0,"value" in the cli
-        if matches!(param_type, ParameterType::Text | ParameterType::Value) {
-            if !default_str.starts_with('"') && !default_str.ends_with('"') {
-                default_str = format!("\"{}\"", default_str);
-            }
-        }
-
         Self {
             param_type,
-            default: default_str,
+            default: default.into(),
             name: None,
             min,
             max,
             position,
+            choices: None,
         }
+    }
+
+    /// Returns the parameter's value formatted for the G'MIC CLI.
+    /// Text and Value parameters are wrapped in double quotes if not already quoted.
+    pub fn cli_value(&self) -> String {
+        let mut value = self.default.clone();
+        if matches!(self.param_type, ParameterType::Text | ParameterType::Value) {
+            if !value.starts_with('"') && !value.ends_with('"') {
+                value = format!("\"{}\"", value);
+            }
+        }
+        value
     }
 
     pub fn randomize(&mut self) {
