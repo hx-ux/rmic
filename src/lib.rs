@@ -10,6 +10,7 @@ mod parameter;
 pub use filter::Filter;
 pub use global_list::GlobalList;
 pub use parameter::{Choice, Parameter, ParameterType};
+use regex::Regex;
 
 use std::{
     io,
@@ -273,5 +274,19 @@ impl Gmic {
 
     pub fn display(self) -> Self {
         self.add_filter("-display", &[])
+    }
+
+    /// Returns the G'MIC version string (e.g. "3.7.6") if the binary is available.
+    /// If the command fails or the output cannot be parsed, `None` is returned.
+    pub fn version(self) -> Option<String> {
+        let output = Command::new(&self.binary).arg("version").output().ok()?; // command failed → None
+        let stdout = String::from_utf8(output.stdout).ok()?;
+        let re = Regex::new(r"(?i)Version\s+(\d+)\.(\d+)\.(\d+)").expect("valid regex");
+        let caps = re.captures(&stdout)?;
+        let major = caps.get(1)?.as_str();
+        let minor = caps.get(2)?.as_str();
+        let patch = caps.get(3)?.as_str();
+
+        Some(format!("{major}{minor}{patch}"))
     }
 }
