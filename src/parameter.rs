@@ -4,6 +4,7 @@ use strum_macros::Display;
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Default, Display)]
 #[serde(rename_all = "lowercase")]
+#[allow(unused_attributes)]
 pub enum ParameterType {
     #[strum(to_string = "int")]
     Int,
@@ -13,6 +14,10 @@ pub enum ParameterType {
     Choice,
     #[strum(to_string = "bool")]
     Bool,
+    #[strum(to_string = "value")]
+    Value,
+    #[strum(to_string = "point")]
+    Point,
     #[strum(to_string = "separator")]
     Separator,
     #[strum(to_string = "link")]
@@ -21,15 +26,43 @@ pub enum ParameterType {
     Note,
     #[strum(to_string = "color")]
     Color,
+    #[strum(to_string = "text")]
+    Text,
+    #[strum(to_string = "button")]
+    Button,
+    #[strum(to_string = "file")]
+    File,
+    #[strum(to_string = "folder")]
+    Folder,
     #[default]
-    #[strum(to_string = "unknwon")]
+    #[strum(to_string = "unknown")]
     Unknown,
 }
 
 impl ParameterType {
-    pub fn is_randomizable(&self) -> bool {
-        matches!(self, Self::Int | Self::Float)
+    pub fn is_data_type(&self) -> bool {
+        let type_check = matches!(
+            self,
+            Self::Int
+                | Self::Float
+                | Self::Bool
+                | Self::Choice
+                | Self::Color
+                | Self::Text
+                | Self::Value
+                | Self::Point
+        );
+        type_check
     }
+}
+
+/// A choice option for `ParameterType::Choice`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Choice {
+    /// Index for mapping
+    pub value: String,
+    /// Description
+    pub label: String,
 }
 
 /// A parameter for a G'MIC filter.
@@ -38,7 +71,7 @@ pub struct Parameter {
     /// Data type (e.g., "float", "int", "bool", "color").
     pub param_type: ParameterType,
     /// Descriptive name (optional).
-
+    pub name: Option<String>,
     /// Default value.
     pub default: String,
     /// Minimum value (optional).
@@ -47,6 +80,8 @@ pub struct Parameter {
     pub max: Option<String>,
     /// Position in the parameter list.
     pub position: usize,
+    /// Available choices for `ParameterType::Choice` (parsed from JSON).
+    pub choices: Option<Vec<Choice>>,
 }
 
 /// Single Paramter of an GMIC Filter
@@ -57,7 +92,9 @@ impl Parameter {
             default: value,
             min: None,
             max: None,
+            name: None,
             position,
+            choices: None,
         }
     }
 
@@ -71,14 +108,28 @@ impl Parameter {
         Self {
             param_type,
             default: default.into(),
+            name: None,
             min,
             max,
             position,
+            choices: None,
         }
     }
 
+    /// Returns the parameter's value formatted for the G'MIC CLI.
+    /// Text and Value parameters are wrapped in double quotes if not already quoted.
+    pub fn cli_value(&self) -> String {
+        let mut value = self.default.clone();
+        if matches!(self.param_type, ParameterType::Text | ParameterType::Value) {
+            if !value.starts_with('"') && !value.ends_with('"') {
+                value = format!("\"{}\"", value);
+            }
+        }
+        value
+    }
+
     pub fn randomize(&mut self) {
-        if !self.param_type.is_randomizable() {
+        if !self.param_type.is_data_type() {
             return;
         }
 
@@ -111,8 +162,20 @@ impl Parameter {
                 let b = rng.random_range(0..=255).to_string();
                 self.default = format!("{},{},{}", r, g, b)
             }
-            ParameterType::Choice => {}
-            _ => {}
+            ParameterType::Choice => {
+                if let (Ok(min), Ok(max)) = (min_val.parse::<i32>(), max_val.parse::<i32>()) {
+                    self.default = rng.random_range(min..=max).to_string();
+                }
+            }
+            // Point can be from -100 to +100
+            ParameterType::Point => {
+                let x = rng.random_range(-100..=100).to_string();
+                let y = rng.random_range(-100..=100).to_string();
+                self.default = format!("{},{}", x, y)
+            }
+            _ => {
+                return;
+            }
         }
     }
 

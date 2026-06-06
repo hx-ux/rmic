@@ -4,15 +4,18 @@
 //! It allows chaining image processing effects, setting input/output files, and executing via the CLI.
 
 mod filter;
+mod global_list;
 mod parameter;
+
+pub use filter::Filter;
+pub use global_list::GlobalList;
+pub use parameter::{Choice, Parameter, ParameterType};
 
 use std::{
     io,
     path::{Path, PathBuf},
     process::Command,
 };
-
-use crate::{filter::Filter, parameter::Parameter};
 
 /// Errors that can occur during G'MIC operations.
 #[derive(Debug)]
@@ -81,7 +84,7 @@ impl Gmic {
     }
 
     /// Adds a effect with params
-    pub fn add_effect(mut self, command: &str, params: &[&str]) -> Self {
+    pub fn add_filter(mut self, command: &str, params: &[&str]) -> Self {
         let parameters: Vec<Parameter> = params
             .iter()
             .enumerate()
@@ -94,14 +97,14 @@ impl Gmic {
     }
 
     /// Adds raw arguments.
-    pub fn add_raw_effect(mut self, arg: &str) -> Self {
+    pub fn add_raw_filter(mut self, arg: &str) -> Self {
         if !arg.is_empty() {
             self.filters.push(Filter::new_raw(arg.to_string()));
         }
         self
     }
 
-    pub fn add_json_effect(mut self, json: &str) -> Self {
+    pub fn add_json_filter(mut self, json: &str) -> Self {
         match Filter::from_json(json) {
             Ok(effect) => {
                 self.filters.push(effect);
@@ -114,8 +117,15 @@ impl Gmic {
         }
     }
 
-    pub fn add_build_effect(mut self, effect: Filter) -> Self {
-        self.filters.push(effect);
+    /// Adds a single filter as struct
+    pub fn add_object_filter(mut self, filter: Filter) -> Self {
+        self.filters.push(filter);
+        self
+    }
+
+    /// Adds a vec of  filters
+    pub fn add_object_filters(mut self, filters: Vec<Filter>) -> Self {
+        self.filters.extend(filters);
         self
     }
 
@@ -134,7 +144,7 @@ impl Gmic {
         }
 
         for effect in &self.filters {
-            command.args(effect.forargs());
+            command.args(effect.to_cli_command());
         }
 
         if let Some(ref output) = self.output_file {
@@ -166,6 +176,35 @@ impl Gmic {
         }
     }
 
+    pub fn summary(&self) -> String {
+        let mut summary = String::new();
+
+        if let Some(ref input) = self.input_file {
+            summary.push_str(&format!("Input file: {}\n", input.display()));
+        } else {
+            summary.push_str("Input file: (not set)\n");
+        }
+
+        if let Some(ref output) = self.output_file {
+            summary.push_str(&format!("Output file: {}\n", output.display()));
+        } else {
+            summary.push_str("Output file: (not set)\n");
+        }
+
+        summary.push_str("\nFilters:\n");
+        if self.filters.is_empty() {
+            summary.push_str("(No filters applied)\n");
+        } else {
+            for (i, f) in self.filters.iter().enumerate() {
+                summary.push_str(&format!("  {}. Command: {}\n", i + 1, f.command));
+            }
+        }
+
+        summary.push_str("\nFull Command:\n");
+        summary.push_str(&format!(" {} {}", self.binary, self.dry_run()));
+        summary
+    }
+
     /// Previews the command.
     pub fn dry_run(&self) -> String {
         self.generate_command()
@@ -178,35 +217,35 @@ impl Gmic {
 
 impl Gmic {
     pub fn to_rgba(self) -> Self {
-        self.add_raw_effect("to_rgba")
+        self.add_raw_filter("to_rgba")
     }
 
     pub fn to_gray(self) -> Self {
-        self.add_raw_effect("to_gray")
+        self.add_raw_filter("to_gray")
     }
 
     pub fn solarize(self) -> Self {
-        self.add_raw_effect("solarize")
+        self.add_raw_filter("solarize")
     }
 
     pub fn rotate(self, degree: u16) -> Self {
-        self.add_effect("rotate", &[&degree.to_string()])
+        self.add_filter("rotate", &[&degree.to_string()])
     }
 
     pub fn blur(self, radius: f32) -> Self {
-        self.add_effect("blur", &[&radius.to_string()])
+        self.add_filter("blur", &[&radius.to_string()])
     }
 
     pub fn resize(self, width: u32, height: u32) -> Self {
-        self.add_effect("resize", &[&width.to_string(), &height.to_string()])
+        self.add_filter("resize", &[&width.to_string(), &height.to_string()])
     }
 
     pub fn brightness(self, value: f32) -> Self {
-        self.add_effect("brightness", &[&value.to_string()])
+        self.add_filter("brightness", &[&value.to_string()])
     }
 
     pub fn contrast(self, value: f32) -> Self {
-        self.add_effect("contrast", &[&value.to_string()])
+        self.add_filter("contrast", &[&value.to_string()])
     }
 
     pub fn watermark(
@@ -219,7 +258,7 @@ impl Gmic {
         smoothness: u8,
     ) -> Self {
         let mode_str = if mode == 1 { "1" } else { "0" };
-        self.add_effect(
+        self.add_filter(
             "watermark_visible",
             &[
                 text,
@@ -233,6 +272,6 @@ impl Gmic {
     }
 
     pub fn display(self) -> Self {
-        self.add_effect("-display", &[])
+        self.add_filter("-display", &[])
     }
 }
