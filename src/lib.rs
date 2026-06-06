@@ -289,4 +289,11 @@ impl Gmic {
 
         Some(format!("{major}{minor}{patch}"))
     }
+
+    pub fn update(self) {
+        match Command::new(&self.binary).arg("update").output().ok() {
+            Some(_) => (),
+            None => return,
+        };
+    }
 }
