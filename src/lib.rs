@@ -4,12 +4,12 @@
 //! It allows chaining image processing effects, setting input/output files, and executing via the CLI.
 
 mod filter;
-mod global_list;
+mod filter_list;
 mod parameter;
 
 pub use filter::Filter;
-pub use global_list::GlobalList;
-pub use parameter::{Choice, Parameter, ParameterType};
+pub use filter_list::FilterList;
+pub use parameter::{Parameter, ParameterChoice, ParameterType};
 use regex::Regex;
 
 use std::{

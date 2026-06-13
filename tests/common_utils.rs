@@ -1,4 +1,4 @@
-use rmic::{Gmic, GmicError};
+use rmic::Gmic;
 
 use crate::utils::process_images;
 mod utils;
