@@ -1,4 +1,4 @@
-use crate::parameter::{Choice, Parameter, ParameterType};
+use crate::parameter::{Parameter, ParameterChoice, ParameterType};
 use serde::{Deserialize, Deserializer};
 use std::collections::BTreeMap;
 /// Represents a G'MIC Filter
@@ -113,7 +113,7 @@ where
 
         let choices = helper.choices.map(|m| {
             m.into_iter()
-                .map(|(value, label)| Choice { value, label })
+                .map(|(value, label)| ParameterChoice { value, label })
                 .collect()
         });
 

@@ -1,4 +1,4 @@
-use rmic::{Gmic, GmicError};
+use rmic::Gmic;
 
 use crate::utils::process_images;
 mod utils;
@@ -16,4 +16,12 @@ fn check_dryrun() {
         "-input input.jpg polaroid 5,30 -output tests/out/water_params.jpg".to_string(),
         command
     );
+}
+
+#[test]
+fn check_version() {
+    let gmic = Gmic::new();
+    if let Some(v) = gmic.version() {
+        assert_eq!("376", v)
+    }
 }

@@ -58,7 +58,7 @@ impl ParameterType {
 
 /// A choice option for `ParameterType::Choice`.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Choice {
+pub struct ParameterChoice {
     /// Index for mapping
     pub value: String,
     /// Description
@@ -81,7 +81,7 @@ pub struct Parameter {
     /// Position in the parameter list.
     pub position: usize,
     /// Available choices for `ParameterType::Choice` (parsed from JSON).
-    pub choices: Option<Vec<Choice>>,
+    pub choices: Option<Vec<ParameterChoice>>,
 }
 
 /// Single Paramter of an GMIC Filter

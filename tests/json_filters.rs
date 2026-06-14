@@ -1,6 +1,5 @@
-use rmic::{Choice, Filter, Parameter, ParameterType};
-
 use crate::utils::{task_frame_cube, task_hard_sketch, task_phasecongruence, task_should_fail};
+use rmic::{Filter, Parameter, ParameterChoice, ParameterType};
 mod utils;
 
 #[test]
@@ -43,7 +42,6 @@ fn check_params_value() {
         assert_eq!(params[7].param_type, ParameterType::Choice);
         assert_eq!(10, params.len(), "param Count");
     }
-
     let _ = task.execute();
 }
 
@@ -64,19 +62,19 @@ fn parse_choice_position() {
             assert_eq!(
                 choice_param.choices,
                 Some(vec![
-                    Choice {
+                    ParameterChoice {
                         value: "0".to_string(),
                         label: "Normal".to_string(),
                     },
-                    Choice {
+                    ParameterChoice {
                         value: "1".to_string(),
                         label: "Mirror-X".to_string(),
                     },
-                    Choice {
+                    ParameterChoice {
                         value: "2".to_string(),
                         label: "Mirror-Y".to_string(),
                     },
-                    Choice {
+                    ParameterChoice {
                         value: "3".to_string(),
                         label: "Mirror-XY".to_string(),
                     },
