@@ -1,4 +1,7 @@
-use std::{fs::create_dir, path::PathBuf};
+use std::{
+    fs::{create_dir, read_to_string},
+    path::PathBuf,
+};
 
 use crate::{GmicError, filter::Filter};
 use serde::Deserialize;
@@ -35,7 +38,16 @@ impl FilterList {
         return Err(GmicError::GmicNotFound);
     }
 
-    pub fn deserialize(json_data: &str) -> Self {
-        serde_json::from_str(json_data).expect("Failed to parse GlobalList JSON")
+    pub fn load_local(path: &PathBuf) -> Result<Self, GmicError> {
+        let json_data = match read_to_string(&path) {
+            Ok(data) => data,
+            Err(_) => return Err(GmicError::JsonParseError),
+        };
+
+        Self::deserialize(&json_data)
+    }
+
+    pub fn deserialize(json_data: &str) -> Result<Self, GmicError> {
+        serde_json::from_str(json_data).map_err(|_| GmicError::JsonParseError)
     }
 }
