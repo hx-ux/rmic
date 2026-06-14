@@ -5,8 +5,5 @@ result.png
 result.jpg
 .DS_Store
 hidden/
-<<<<<<< HEAD
 .idea/
-=======
->>>>>>> d091074 (changed visibilty)
 .archive/
