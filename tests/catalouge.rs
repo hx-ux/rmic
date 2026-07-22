@@ -1,18 +1,29 @@
-use std::path::PathBuf;
-
 use crate::utils::{INPUT_IMAGE, OUTPUT_FOLDER};
 use rand::seq::IndexedRandom;
-use rmic::{Filter, FilterList, Gmic};
+use rmic::{Catalouge, Gmic};
+use rmic::{Filter, Parameter, ParameterType};
+use std::path::PathBuf;
 mod utils;
 
-fn load_filter_list() -> Option<FilterList> {
+fn load_filter_list() -> Option<Catalouge> {
     let mut path = PathBuf::new();
     path.push("tests/assets/update376.json");
-    if let Ok(v) = FilterList::load_local(&path) {
-        Some(v)
-    } else {
-        None
+    match Catalouge::load_local(&path) {
+        Ok(c) => Some(c),
+        Err(_) => None,
     }
+}
+
+#[test]
+fn can_filter_list_be_loaded() {
+    if let Some(c) = load_filter_list() {
+        assert!(c.categories.len() == 68);
+    }
+}
+
+#[test]
+fn filter_catalouge() {
+    if let Some(c) = load_filter_list() {}
 }
 
 fn get_random_filters(count: i8) -> Vec<Filter> {
@@ -56,4 +67,24 @@ fn random_filter_from_list() {
     let task = gmic_task.execute();
 
     assert!(task.is_ok());
+}
+
+#[test]
+fn exclude_by_command() {
+    let filter = Filter::new_params("fx_blend".to_string(), vec![]);
+
+    let exclude = vec!["fx_blend".to_string(), "fx_transfer_pca".to_string()];
+    assert!(filter.has_property(Some(exclude), None));
+}
+
+#[test]
+fn exclude_by_param_type() {
+    let exclude = vec![ParameterType::Note, ParameterType::Separator];
+
+    let filter = Filter::new_params(
+        "fx_blend".to_string(),
+        vec![Parameter::new(ParameterType::Note, "None", None, None, 0)],
+    );
+
+    assert!(filter.has_property(None, Some(exclude)));
 }

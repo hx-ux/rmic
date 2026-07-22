@@ -35,6 +35,15 @@ impl Filter {
         }
     }
 
+    pub fn new_params(command: String, parameters: Vec<Parameter>) -> Self {
+        Self {
+            command,
+            parameters,
+            raw_filter: false,
+            name: None,
+        }
+    }
+
     /// Returns ["command", "value1,value2,..."] or the raw string.
     /// Skips commands that are "_none" (no-op/placeholder in G'MIC definitions).
     pub fn to_cli_command(&self) -> Vec<String> {
@@ -68,6 +77,26 @@ impl Filter {
         for p in self.parameters.iter_mut() {
             p.randomize();
         }
+    }
+    // check if the filter contains and matches any of this
+    pub fn has_property(
+        &self,
+        command: Option<Vec<String>>,
+        param_type: Option<Vec<ParameterType>>,
+    ) -> bool {
+        if let Some(commands) = command {
+            if commands.contains(&self.command) {
+                return true;
+            }
+        }
+
+        if let Some(types) = param_type {
+            return self
+                .parameters
+                .iter()
+                .any(|d| types.contains(&d.param_type));
+        }
+        return false;
     }
 }
 

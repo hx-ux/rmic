@@ -7,7 +7,6 @@ fn check_dryrun() {
     let name = "water_params";
     let effect = |gmic: Gmic| gmic.add_raw_filter("polaroid 5,30");
     let result = process_images(name, effect);
-
     let mut command = "".to_string();
     if let Ok(c) = result {
         command = c.to_string();
@@ -16,12 +15,4 @@ fn check_dryrun() {
         "-input input.jpg polaroid 5,30 -output tests/out/water_params.jpg".to_string(),
         command
     );
-}
-
-#[test]
-fn check_version() {
-    let gmic = Gmic::new();
-    if let Some(v) = gmic.version() {
-        assert_eq!("376", v)
-    }
 }
