@@ -3,16 +3,17 @@
 //! This library provides a builder pattern for constructing and executing G'MIC commands.
 //! It allows chaining image processing effects, setting input/output files, and executing via the CLI.
 
+mod catalouge;
 mod filter;
-mod filter_list;
 mod parameter;
 
+pub use catalouge::Catalouge;
 pub use filter::Filter;
-pub use filter_list::FilterList;
 pub use parameter::{Parameter, ParameterChoice, ParameterType};
 use regex::Regex;
 
 use std::{
+    fmt::Display,
     io,
     path::{Path, PathBuf},
     process::Command,
@@ -31,13 +32,26 @@ pub enum GmicError {
     GmicNotFound,
     /// JSON could not be parsed.
     JsonParseError,
-    /// JSON could not be parsed.
+    /// No effects for an Filter
     EmptyEffectChain,
 }
 
 impl From<io::Error> for GmicError {
     fn from(err: io::Error) -> Self {
         GmicError::Io(err)
+    }
+}
+
+impl Display for GmicError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GmicError::Io(error) => write!(f, "{}", error),
+            GmicError::ExecutionFailed(_) => write!(f, "{}", "Execution failed".to_string()),
+            GmicError::InputNotFound => write!(f, "{}", "Input Image doenst exits".to_string()),
+            GmicError::GmicNotFound => write!(f, "{}", "No gmic executebale was found".to_string()),
+            GmicError::JsonParseError => write!(f, "{}", "Json could not be parsed".to_string()),
+            GmicError::EmptyEffectChain => write!(f, "{}", "Filter has no parameter".to_string()),
+        }
     }
 }
 

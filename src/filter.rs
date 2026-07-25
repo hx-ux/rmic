@@ -13,7 +13,7 @@ pub struct Filter {
     #[serde(skip, default)]
     raw_filter: bool,
     /// name of the effect
-    name: Option<String>,
+    pub name: Option<String>,
 }
 
 impl Filter {
@@ -31,6 +31,15 @@ impl Filter {
             command,
             parameters: vec![],
             raw_filter: true,
+            name: None,
+        }
+    }
+
+    pub fn new_params(command: String, parameters: Vec<Parameter>) -> Self {
+        Self {
+            command,
+            parameters,
+            raw_filter: false,
             name: None,
         }
     }
@@ -68,6 +77,26 @@ impl Filter {
         for p in self.parameters.iter_mut() {
             p.randomize();
         }
+    }
+    // check if the filter contains and matches any of this
+    pub fn has_property(
+        &self,
+        command: Option<Vec<String>>,
+        param_type: Option<Vec<ParameterType>>,
+    ) -> bool {
+        if let Some(commands) = command {
+            if commands.contains(&self.command) {
+                return true;
+            }
+        }
+
+        if let Some(types) = param_type {
+            return self
+                .parameters
+                .iter()
+                .any(|d| types.contains(&d.param_type));
+        }
+        return false;
     }
 }
 
