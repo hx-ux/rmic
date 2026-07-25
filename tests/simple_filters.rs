@@ -1,5 +1,5 @@
 use crate::utils::process_images;
-use rmic::{Filter, Gmic};
+use rmic::Gmic;
 mod utils;
 
 #[test]
