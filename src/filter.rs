@@ -13,7 +13,7 @@ pub struct Filter {
     #[serde(skip, default)]
     raw_filter: bool,
     /// name of the effect
-    name: Option<String>,
+    pub name: Option<String>,
 }
 
 impl Filter {
