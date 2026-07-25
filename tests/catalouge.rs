@@ -144,7 +144,7 @@ fn random_filter_from_list() {
 
     let filter_count = 3;
     //let filters = get_random_filters(filter_count);
-    let filters_cat = get_random_filters_in_category(filter_count, "Sequences");
+    let filters_cat = get_random_filters_in_category(filter_count, "Artistic");
 
     let gmic_task = Gmic::new()
         .input(INPUT_IMAGE)

@@ -40,11 +40,4 @@ impl Catalouge {
     pub fn deserialize(json_data: &str) -> Result<Self, GmicError> {
         serde_json::from_str(json_data).map_err(|_| GmicError::JsonParseError)
     }
-
-    pub fn exlusion_list_cli() -> (Vec<String>, Vec<ParameterType>) {
-        let exclude_commands = vec!["fx_blend".to_string(), "fx_transfer_pca".to_string()];
-        let exclude_params_type: Vec<ParameterType> = vec![];
-
-        return (exclude_commands, exclude_params_type);
-    }
 }
