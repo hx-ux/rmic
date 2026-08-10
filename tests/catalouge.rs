@@ -16,7 +16,7 @@ const EXCLUDE_CATEGORIES: [&str; 6] = [
 ];
 
 fn load_catalouge() -> Option<Catalouge> {
-    let path = PathBuf::from("tests/assets/update376.json");
+    let path = PathBuf::from("tests/assets/update401.json");
     let mut c = Catalouge::load_local(&path).ok()?;
 
     let exclude_commands = vec![
@@ -142,7 +142,7 @@ fn random_filter_from_list() {
     let mut rng = rand::rng();
     let random_number: u32 = rng.random();
 
-    let filter_count = 3;
+    let filter_count = 5;
     //let filters = get_random_filters(filter_count);
     let filters_cat = get_random_filters_in_category(filter_count, "Artistic");
 
